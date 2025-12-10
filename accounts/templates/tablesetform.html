@@ -1,0 +1,10 @@
+{% load crispy_forms_tags %}
+<form method="post" id="table_form" action="{% if form.instance.pk %}
+                {% url 'accounts:tableupdate' form.instance.pk %}
+              {% else %}
+                {% url 'accounts:tablecreate' %}
+              {% endif %}">
+    {% csrf_token %}
+    {{form|crispy}}
+    <button class="btn btn-primary" type="submit">Submit</button>
+</form>

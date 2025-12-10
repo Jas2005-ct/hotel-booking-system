@@ -1,0 +1,164 @@
+/* GENERAL UTILITIES */
+body {
+    background-color: #f8f9fa;
+    /* Light grey background for the page */
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+.transition-all {
+    transition: all 0.3s ease;
+}
+
+.menu-card {
+    border: none !important;
+    border-radius: 16px !important;
+    background: #ffffff;
+    overflow: hidden;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.menu-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.menu-card .img-wrapper {
+    overflow: hidden;
+    height: 200px;
+    position: relative;
+}
+
+.menu-card .card-img-top {
+    height: 100% !important;
+    width: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.menu-card:hover .card-img-top {
+    transform: scale(1.1);
+}
+
+.menu-card .card-body {
+    padding: 1.5rem;
+}
+
+.menu-card .card-title {
+    font-size: 1.1rem;
+    letter-spacing: -0.025em;
+}
+
+/* TABLE CARD STYLING */
+.table-card {
+    border-radius: 16px !important;
+    background: #ffffff;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
+    transition: all 0.3s ease;
+    overflow: hidden;
+    position: relative;
+    border: 1px solid rgba(0, 0, 0, 0.04) !important;
+}
+
+.table-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+}
+
+.table-card.available-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: #198754;
+    /* Success Green */
+}
+
+.table-card.unavailable-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: #dc3545;
+    /* Danger Red */
+}
+
+.table-card .icon-wrapper {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: #e7f1ff;
+    /* Lightest blue */
+    color: #0d6efd;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+}
+
+.table-card .display-6 {
+    font-size: 1.75rem;
+}
+
+/* TOGGLE SWITCH STYLING */
+.toggle-container {
+    margin-top: 1rem;
+    display: flex;
+    justify-content: center;
+}
+
+.status-toggle {
+    background-color: #f1f3f5;
+    border-radius: 50px;
+    padding: 4px;
+    display: inline-flex;
+    position: relative;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.03);
+    border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.toggle-btn {
+    border: none;
+    background: transparent;
+    color: #868e96;
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 6px 16px;
+    border-radius: 50px !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    z-index: 1;
+    white-space: nowrap;
+}
+
+.toggle-btn:hover:not(.active) {
+    color: #495057;
+    background-color: rgba(255, 255, 255, 0.5);
+}
+
+/* Active State for Available */
+#t_available.active {
+    background-color: #ffffff;
+    color: #198754;
+    /* Green */
+    box-shadow: 0 2px 8px rgba(25, 135, 84, 0.15);
+}
+
+/* Active State for Unavailable */
+#t_unavailable.active {
+    background-color: #ffffff;
+    color: #dc3545;
+    /* Red */
+    box-shadow: 0 2px 8px rgba(220, 53, 69, 0.15);
+}
+
+/* STATUS FOOTER */
+.status-indicator .badge {
+    font-weight: 500;
+    font-size: 0.8rem;
+    padding: 0.5em 1em;
+}
