@@ -10,14 +10,6 @@
     <div class="d-flex justify-content-between align-items-center mb-5">
         <h1 class="display-5 fw-bold text-primary">Dashboard of {{user.role|title}} - {{user.name|title}}</h1>
         <div class="d-flex gap-2">
-            {% if user.role == 'admin' %}
-                <button id='add-menu' type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#menu">
-                    <i class="bi bi-bag-plus-fill"></i> Add Menu
-                </button>
-                <button id='add-table' type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#table">
-                    <i class="bi bi-plus-circle-dotted"></i> Add Table
-                </button>
-            {% endif %}
             <a href="{% url 'accounts:logout' %}" class="btn btn-secondary">
                 <i class="bi bi-box-arrow-left"></i> Logout
             </a>
@@ -48,25 +40,13 @@
                         </div>
                         <p class="card-text text-muted small">{{ i.description|truncatechars:100 }}</p>
                     </div>
-                    {% if user.role == 'admin' %}
-                    <div class="card-footer bg-transparent border-0 d-flex justify-content-between pb-3 pt-0">
-                        <button class="update-menu btn btn-outline-primary btn-sm rounded-pill px-3"
-                            data-url="{% url 'accounts:menuupdate' i.pk %}"
-                            data-pk="{{ i.pk }}">
-                        <i class="bi bi-pencil-square me-1"></i> Update
-                        </button>
-                        <button id="delete-menu" class="btn btn-outline-danger btn-sm rounded-pill px-3"  data-pk="{{ i.pk }}">
-                            <i class="bi bi-trash-fill me-1"></i>Delete
-                        </button>
-                    </div>
-                    {% endif %}
                 </div>
             </div>
             {% endfor %}
         </div>
         {% else %}
         <div class="alert alert-info" role="alert">
-            No menu items found. {% if user.role == 'admin' %}Click "Add Menu" to create one.{% endif %}
+            No menu items found.
         </div>
         {% endif %}
     </div>
@@ -88,13 +68,6 @@
                             <li class="mb-1"><i class="bi bi-layers me-2"></i>Floor: {{ i.floor_no }}</li>
                             <li><i class="bi bi-people me-2"></i>Capacity: {{ i.capacity }}</li>
                         </ul>
-                        
-                        <div class="toggle-container">
-                             <div class="btn-group btn-group-toggle status-toggle" role="group">
-                                <button id="t_available" class="btn toggle-btn {% if i.available %}active{% endif %}" data-pk="{{i.pk}}">Available</button>
-                                <button id="t_unavailable" class="btn toggle-btn {% if not i.available %}active{% endif %}" data-pk="{{i.pk}}">Unavailable</button>
-                            </div>
-                        </div>
                     </div>
                     <div class="card-footer bg-transparent border-0 pb-3">
                          <span class="status-indicator">
@@ -105,88 +78,96 @@
                             {% endif %}
                          </span>
                     </div>
-                    {% if user.role == 'admin' %}
-                    <div class="card-footer bg-transparent border-0 d-flex justify-content-between pb-3 pt-0">
-                        <button class="update-table btn btn-outline-primary btn-sm rounded-pill px-3"
-                            data-url="{% url 'accounts:tableupdate' i.pk %}"
-                            data-pk="{{ i.pk }}">
-                        <i class="bi bi-pencil-square me-1"></i> Update
-                        </button>
-                        <button class="delete-table btn btn-outline-danger btn-sm rounded-pill px-3"
-                            data-pk="{{ i.pk }}">
-                        <i class="bi bi-trash-fill me-1"></i> Delete
-                        </button>
-                    </div>
-                    {% endif %}
-
+                    <button type="button" class="book-table btn btn-primary" data-location="{{ i.Location }}" data-bs-toggle="modal" data-table_no="{{ i.table_no }}" data-bs-target="#book_tables">
+                    <i class="bi bi-bag-plus-fill"></i> Book Table
+                    </button>
                 </div>
             </div>
             {% endfor %}
         </div>
         {% else %}
         <div class="alert alert-info" role="alert">
-            No tables set up yet. {% if user.role == 'admin' %}Click "Add Table" to create one.{% endif %}
+            No tables set up yet.
         </div>
         {% endif %}
     </div>
-
 </div>
-
-<!-- Menu Modal -->
-<div class="modal fade" id="menu" tabindex="-1" aria-labelledby="menuLabel" aria-hidden="true">
+<div class="modal fade" id="book_tables" tabindex="-1" aria-labelledby="menuLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="menuLabel">Create Menu Item</h5>
+                <h5 class="modal-title" id="menuLabel">Book Table</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body" id='menu_body'>
+            <div class="modal-body" id='book_tables_body'>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Table Modal -->
-<div class="modal fade" id="table" tabindex="-1" aria-labelledby="tableLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="tableLabel">Setup New Table</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body" id='table_body'>
-            </div>
-        </div>
-    </div>
-</div>
 
 {% endblock %}
 {% block extrajs %}
     <script>
-        $(document).on('click', '#t_available', function () {
-            var pk = $(this).data('pk');
-            updateStatus(pk, 'available')
-        })
-        $(document).on('click', '#t_unavailable', function () {
-            var pk = $(this).data('pk');
-            updateStatus(pk, 'unavailable')
-        })
-        function updateStatus(pk, status) {
-            $.ajax({
-                url: `/accounts/tablestatus/${pk}/`,
-                type: 'POST',
-                data: {
-                    csrfmiddlewaretoken: '{{ csrf_token }}',
-                    status: status
-                },
-                success: function (data) {
-                    location.reload();
-                },
-                error: function (data) {
-                    Swal.fire('Error', 'Something went wrong', 'error');
+        $(document).ready(function() {
+            let table_no = '';
+            $('.book-table').click(function() {
+                table_no = $(this).data('table_no');
+                var table_location = $(this).data('location');
+                console.log(table_no);
+                $('#book_tables').modal('show');
+                $('#book_tables_body').load('/table_reservation/table_book_form/?table_no='+table_no);
+                
+            }); 
+            $(document).on('submit','#table_book_form',function(e){
+                e.preventDefault();
+                let t_no = table_no;
+                console.log(t_no)
+                var data = {
+                    'table_no':t_no,
+                    'duration':$('#div_id_duration input').val() || $('#id_duration').val(),
+                    'time_schedule':$('#div_id_time_schedule input').val() || $('#id_time_schedule').val()
                 }
+                $.ajax({
+                    url:'/table_reservation/table_book_form/',
+                    method:'POST',
+                    data:JSON.stringify(data),
+                    dataType:'json',
+                    contentType:'application/json',
+                    headers:{
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    success:function(data){
+                        if (data.success){
+                            $('#book_tables').modal('hide');
+                            $('#book_tables_body').html(data.message);
+                            
+                            const Toast = Swal.mixin({
+                                toast: true,
+                                position: 'top-end',
+                                showConfirmButton: false,
+                                timer: 1500,
+                                timerProgressBar: true,
+                                didOpen: (toast) => {
+                                    toast.addEventListener('mouseenter', Swal.stopTimer)
+                                    toast.addEventListener('mouseleave', Swal.resumeTimer)
+                                }
+                            });
+                            
+                            Toast.fire({
+                                icon: 'success',
+                                title: data.message
+                            });
+                        }else{
+                            $('#book_tables_body').html(data.message);
+                        }
+                        location.reload();
+                    },
+                    error: function(data){
+                        $('#book_tables_body').html('<div class="text-center"><i class="fa fa-spinner fa-spin"></i></div>');
+                    } 
+                })
             })
-        }
-    </script>        
-    <script src="{% static 'js/account_home_js.js' %}"></script> 
-{%endblock%}
+        });
+    </script>
+{% endblock %}

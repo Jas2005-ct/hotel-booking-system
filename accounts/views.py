@@ -63,7 +63,7 @@ class GuestUserView(CreateView):
     model = CustomUser
     form_class = CustomUserForm
     template_name = 'guestuserform.html'
-    success_url = '/accounts/'
+    success_url = '/table_reservation/'
 
     def form_valid(self,form):
         user = form.save(commit=False)
@@ -86,7 +86,7 @@ def login_view(request):
                 if user.role == 'admin' or user.role=='waiter':
                     return redirect('accounts:management')
                 if user.role == 'guest':
-                    return redirect('accounts:login')
+                    return redirect('table_reservation:guesthome')
                 return redirect('accounts:management')
             else:
                 messages.error(request, 'Invalid username or password')

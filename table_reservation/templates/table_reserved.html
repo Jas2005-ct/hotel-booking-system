@@ -1,0 +1,132 @@
+{%extends 'base.html'%}
+{%block title%}{{user.role|title}}{%endblock%}
+{%block content%}
+    
+   <div id="table-list" class="mb-5">
+        <h2 class="border-bottom pb-2 mb-4"><i class="bi bi-aspect-ratio me-2"></i>Tables</h2>
+        {% if table %}
+        <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-4">
+            {% for i in table %}
+            <div class="col">
+                <div class="card h-100 shadow-sm text-center border-0 table-card {% if i.available %}available-card{% else %}unavailable-card{% endif %}">
+                    <div class="card-body">
+                     <div class="card-footer bg-transparent border-0 pb-3">
+                         <span class="status-indicator">
+                            {% if i.assigned %}
+                                <span class="badge bg-success bg-opacity-25 text-success rounded-pill"><i class="bi bi-check-circle me-1"></i>Assigned</span>
+                            {% else %}
+                                <span class="badge bg-danger bg-opacity-25 text-danger rounded-pill"><i class="bi bi-x-circle me-1"></i>Unassigned</span>
+                            {% endif %}
+                         </span>
+                    </div> 
+                        <div class="icon-wrapper mb-3 mx-auto">
+                            <i class="bi bi-table display-6"></i>
+                        </div>
+                        <h5 class="card-title fw-bold">Table #{{ i.table.table_no }}</h5>
+                        <ul class="list-unstyled text-muted mb-4 small">
+                            <li class="mb-1"><i class="bi bi-layers me-2"></i>Floor: {{ i.table.floor_no }}</li>
+                            <li><i class="bi bi-people me-2"></i>Capacity: {{ i.table.capacity }}</li>
+                            <li><i class="bi bi-people me-2"></i>Location: {{ i.table.Location }}</li>
+                        </ul>
+                        <hr>
+                        <h6>Time Schedule</h6>
+                        <p class="mb-0">{{ i.time_schedule }}</p>
+                        <hr>
+                        <h6>Guest</h6>
+                        <p class="mb-0">{{ i.user.name }}</p>
+                        <hr>
+                        <h6>Guest Phone No</h6>
+                        <p class="mb-0">{{ i.user.phone_no }}</p>
+
+                    </div>
+                    {%if user.role == 'admin'%}
+                    {%if i.assigned == True%}
+                    <h6>waiter assigned</h6>
+                        <p class="mb-0">{{ i.waiter_name}}</p>
+                        <hr>
+                    {% endif %}
+                    {% endif %}
+                    <div class="card-footer bg-transparent border-0 pb-3">
+                         <span class="status-indicator">
+                            {% if i.available %}
+                                <span class="badge bg-success bg-opacity-25 text-success rounded-pill"><i class="bi bi-check-circle me-1"></i>Available</span>
+                            {% else %}
+                                <span class="badge bg-danger bg-opacity-25 text-danger rounded-pill"><i class="bi bi-x-circle me-1"></i>Unavailable</span>
+                            {% endif %}
+                         </span>
+                    </div>
+                    {%if request.user.role == 'waiter' and i.assigned == False%}
+                    <button type="button" class="take-table btn btn-primary" data-pk="{{i.pk}}" data-bs-target="#book_tables">
+                    <i class="bi bi-bag-plus-fill"></i>Take
+                    </button>
+         {%endif%}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="alert alert-info" role="alert">
+            No tables set up yet.
+        </div>
+        {% endif %}
+     </div>
+    </div>
+  
+{%endblock%}
+
+{%block extrajs%}
+<script>
+    $(document).ready(function(){
+        $('.take-table').click(function(){
+            var pk = $(this).data('pk')
+            $('#pk').val(pk)
+            $.ajax({
+                url: '/table_reservation/table_assign/',
+                type: 'POST',
+                data: {
+                    'pk': pk,
+                    'csrfmiddlewaretoken': '{{ csrf_token }}'
+                },
+                success: function(response){
+                    if(response.success){
+                        const Toast = Swal.mixin({
+                            toast: true,
+                            position: 'top-end',
+                            showConfirmButton: false,
+                            timer: 1500,
+                            timerProgressBar: true,
+                            didOpen: (toast) => {
+                                toast.addEventListener('mouseenter', Swal.stopTimer)
+                                toast.addEventListener('mouseleave', Swal.resumeTimer)
+                            }
+                        });
+                        
+                        Toast.fire({
+                            icon: 'success',
+                            title: response.message
+                        });
+                    }
+                },
+                error: function(response){
+                    const Toast = Swal.mixin({
+                        toast: true,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 1500,
+                        timerProgressBar: true,
+                        didOpen: (toast) => {
+                            toast.addEventListener('mouseenter', Swal.stopTimer)
+                            toast.addEventListener('mouseleave', Swal.resumeTimer)
+                        }
+                    });
+
+                    Toast.fire({
+                        icon: 'error',
+                        title: 'An error occurred'
+                    });
+                }
+            })
+        })  
+    })
+</script>
+{%endblock%}

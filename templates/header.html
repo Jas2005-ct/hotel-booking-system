@@ -10,10 +10,16 @@
 
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link" href="">Home</a></li>
+                    {%if user.role == 'guest'%}
+                    <li class="nav-item"><a class="nav-link" href="{% url 'table_reservation:guesthome' %}">Home</a></li>
+                    {%else%}
+                    <li class="nav-item"><a class="nav-link" href="{% url 'accounts:management' %}">Home</a></li>
+                    {%endif%}
                     <li class="nav-item"><a class="nav-link" href="#menu-list">Menu</a></li>
                     <li class="nav-item"><a class="nav-link" href="#table-list">Table</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#">Reservation</a></li>
+                    {%if user.role == 'admin' or user.role == 'waiter'%}
+                    <li class="nav-item"><a class="nav-link" href="{% url 'table_reservation:table_reserved' %}">Reservation</a></li>
+                    {%endif%}
                     <li class="nav-item"><a class="nav-link" href="#">Contact</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'accounts:login' %}">Login</a></li>
                 </ul>
