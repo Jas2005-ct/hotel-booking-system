@@ -2,74 +2,131 @@
 {%block title%}{{user.role|title}}{%endblock%}
 {%block content%}
     
-   <div id="table-list" class="mb-5">
-        <h2 class="border-bottom pb-2 mb-4"><i class="bi bi-aspect-ratio me-2"></i>Tables</h2>
-        {% if table %}
-        <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-4">
-            {% for i in table %}
-            <div class="col">
-                <div class="card h-100 shadow-sm text-center border-0 table-card {% if i.available %}available-card{% else %}unavailable-card{% endif %}">
-                    <div class="card-body">
-                     <div class="card-footer bg-transparent border-0 pb-3">
-                         <span class="status-indicator">
-                            {% if i.assigned %}
-                                <span class="badge bg-success bg-opacity-25 text-success rounded-pill"><i class="bi bi-check-circle me-1"></i>Assigned</span>
-                            {% else %}
-                                <span class="badge bg-danger bg-opacity-25 text-danger rounded-pill"><i class="bi bi-x-circle me-1"></i>Unassigned</span>
+       <!-- Main Content -->
+       <div class="col py-3">
+            <button class="btn btn-outline-dark mb-4" id="sidebarToggle">
+                <i class="bi bi-list"></i> Toggle Menu
+            </button>
+            
+            <!-- Upcomming Reservations Section -->
+            <div id="table-list-upcoming" class="mb-5">
+                <h2 class="border-bottom pb-2 mb-4"><i class="bi bi-calendar-event me-2"></i>Upcoming / Active Reservations</h2>
+                {% if upcoming_reservations %}
+                <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-4">
+                    {% for i in upcoming_reservations %}
+                    <div class="col">
+                        <div class="card h-100 shadow-sm text-center border-0 table-card {% if i.table.available %}available-card{% else %}unavailable-card{% endif %}">
+                            <div class="card-body">
+                                <div class="card-footer bg-transparent border-0 pb-3">
+                                    <span class="status-indicator">
+                                    {% if i.assigned %}
+                                        <span class="badge bg-primary bg-opacity-25 text-primary rounded-pill"><i class="bi bi-person-check me-1"></i>Assigned</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary bg-opacity-25 text-secondary rounded-pill"><i class="bi bi-person-dash me-1"></i>Unassigned</span>
+                                    {% endif %}
+                                    </span>
+                                </div> 
+                                <div class="icon-wrapper mb-3 mx-auto">
+                                    <i class="bi bi-table display-6"></i>
+                                </div>
+                                <h5 class="card-title fw-bold">Table #{{ i.table.table_no }}</h5>
+                                <ul class="list-unstyled text-muted mb-4 small">
+                                    <li class="mb-1"><i class="bi bi-layers me-2"></i>Floor: {{ i.table.floor_no }}</li>
+                                    <li><i class="bi bi-people me-2"></i>Capacity: {{ i.table.capacity }}</li>
+                                    <li><i class="bi bi-geo-alt me-2"></i>Location: {{ i.table.Location }}</li>
+                                </ul>
+                                <hr>
+                                <h6>Time Schedule</h6>
+                                <p class="mb-0">{{ i.time_schedule }}</p>
+                                <hr>
+                                <h6>Guest</h6>
+                                <p class="mb-0">{{ i.user.name }}</p>
+                                <hr>
+                                <h6>Guest Phone No</h6>
+                                <p class="mb-0">{{ i.user.phone_no }}</p>
+                            </div>
+                            
+                            {% if i.waiter_name %}
+                            <div class="card-footer bg-transparent border-0 pb-2">
+                                <small class="text-muted">Waiter: {{ i.waiter_name }}</small>
+                            </div>
                             {% endif %}
-                         </span>
-                    </div> 
-                        <div class="icon-wrapper mb-3 mx-auto">
-                            <i class="bi bi-table display-6"></i>
-                        </div>
-                        <h5 class="card-title fw-bold">Table #{{ i.table.table_no }}</h5>
-                        <ul class="list-unstyled text-muted mb-4 small">
-                            <li class="mb-1"><i class="bi bi-layers me-2"></i>Floor: {{ i.table.floor_no }}</li>
-                            <li><i class="bi bi-people me-2"></i>Capacity: {{ i.table.capacity }}</li>
-                            <li><i class="bi bi-people me-2"></i>Location: {{ i.table.Location }}</li>
-                        </ul>
-                        <hr>
-                        <h6>Time Schedule</h6>
-                        <p class="mb-0">{{ i.time_schedule }}</p>
-                        <hr>
-                        <h6>Guest</h6>
-                        <p class="mb-0">{{ i.user.name }}</p>
-                        <hr>
-                        <h6>Guest Phone No</h6>
-                        <p class="mb-0">{{ i.user.phone_no }}</p>
 
-                    </div>
-                    {%if user.role == 'admin'%}
-                    {%if i.assigned == True%}
-                    <h6>waiter assigned</h6>
-                        <p class="mb-0">{{ i.waiter_name}}</p>
-                        <hr>
-                    {% endif %}
-                    {% endif %}
-                    <div class="card-footer bg-transparent border-0 pb-3">
-                         <span class="status-indicator">
-                            {% if i.available %}
-                                <span class="badge bg-success bg-opacity-25 text-success rounded-pill"><i class="bi bi-check-circle me-1"></i>Available</span>
-                            {% else %}
-                                <span class="badge bg-danger bg-opacity-25 text-danger rounded-pill"><i class="bi bi-x-circle me-1"></i>Unavailable</span>
+                            {%if user.role == 'admin'%}
+                                <!-- Admin Actions if any -->
                             {% endif %}
-                         </span>
+
+                            <div class="card-footer bg-transparent border-0 pb-3">
+                                 <span class="status-indicator">
+                                    {% if i.table.available %}
+                                        <span class="badge bg-success bg-opacity-25 text-success rounded-pill"><i class="bi bi-check-circle me-1"></i>Available</span>
+                                    {% else %}
+                                        <span class="badge bg-danger bg-opacity-25 text-danger rounded-pill"><i class="bi bi-x-circle me-1"></i>Reserved</span>
+                                    {% endif %}
+                                 </span>
+                            </div>
+
+                            {%if request.user.role == 'waiter' and not i.assigned and not i.table.available %}
+                            <button type="button" class="take-table btn btn-primary mt-2" data-pk="{{i.pk}}">
+                                <i class="bi bi-bag-plus-fill"></i> Take Order
+                            </button>
+                            {%endif%}
+                            
+                            {%if request.user.role == 'waiter' and i.assigned %}
+                            <button type="button" class="table-unassign btn btn-primary mt-2" data-pk="{{i.pk}}">
+                                <i class="bi bi-bag-plus-fill"></i> Checkout / Unassign
+                            </button>
+                            {%endif%}
+                        </div>
                     </div>
-                    {%if request.user.role == 'waiter' and i.assigned == False%}
-                    <button type="button" class="take-table btn btn-primary" data-pk="{{i.pk}}" data-bs-target="#book_tables">
-                    <i class="bi bi-bag-plus-fill"></i>Take
-                    </button>
-         {%endif%}
+                    {% endfor %}
                 </div>
+                {% else %}
+                <div class="alert alert-info" role="alert">
+                    No upcoming reservations found.
+                </div>
+                {% endif %}
             </div>
-            {% endfor %}
-        </div>
-        {% else %}
-        <div class="alert alert-info" role="alert">
-            No tables set up yet.
-        </div>
-        {% endif %}
-     </div>
+
+            {% if user.role == 'admin' %}
+            <!-- Past Reservations Section -->
+            <div id="table-list-history" class="mb-5 pt-4 border-top">
+                <h2 class="border-bottom pb-2 mb-4"><i class="bi bi-clock-history me-2"></i>Reservation History</h2>
+                {% if past_reservations %}
+                <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-4">
+                    {% for i in past_reservations %}
+                    <div class="col">
+                        <div class="card h-100 shadow-sm text-center border-0 table-card bg-light">
+                            <div class="card-body opacity-75">
+                                <div class="card-header bg-transparent border-0 pb-0">
+                                    <span class="badge bg-secondary">Completed / Past</span>
+                                </div>
+                                <div class="icon-wrapper mb-3 mx-auto text-muted">
+                                    <i class="bi bi-journal-check display-6"></i>
+                                </div>
+                                <h5 class="card-title fw-bold text-muted">Table #{{ i.table.table_no }}</h5>
+                                <ul class="list-unstyled text-muted mb-3 small">
+                                    <li><i class="bi bi-calendar me-2"></i>{{ i.time_schedule }}</li>
+                                </ul>
+                                <hr>
+                                <h6>Guest</h6>
+                                <p class="mb-0">{{ i.user.name }}</p>
+                                <hr>
+                                <h6>Assigned Waiter</h6>
+                                <p class="mb-0">{% if i.waiter_name %}{{ i.waiter_name }}{% else %}Not Assigned{% endif %}</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="alert alert-light border" role="alert">
+                    No history found.
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+       </div>
     </div>
   
 {%endblock%}
@@ -104,29 +161,73 @@
                         Toast.fire({
                             icon: 'success',
                             title: response.message
+                        }).then(() => {
+                            location.reload();
+                        });
+                    } else {
+                         Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: response.message
                         });
                     }
                 },
                 error: function(response){
-                    const Toast = Swal.mixin({
-                        toast: true,
-                        position: 'top-end',
-                        showConfirmButton: false,
-                        timer: 1500,
-                        timerProgressBar: true,
-                        didOpen: (toast) => {
-                            toast.addEventListener('mouseenter', Swal.stopTimer)
-                            toast.addEventListener('mouseleave', Swal.resumeTimer)
-                        }
-                    });
-
-                    Toast.fire({
+                    Swal.fire({
                         icon: 'error',
-                        title: 'An error occurred'
+                        title: 'Error',
+                        text: 'An error occurred'
                     });
                 }
             })
         })  
+        $('.table-unassign').click(function(){
+            var pk = $(this).data('pk')
+            $.ajax({
+                url:'/table_reservation/table_unassign/',
+                type:'POST',
+                data:{
+                    'pk':pk,
+                    'csrfmiddlewaretoken':'{{csrf_token}}'
+                },
+                success: function(response){
+                    if(response.success){
+                        const Toast = Swal.mixin({
+                            toast: true,
+                            position: 'top-end',
+                            showConfirmButton: false,
+                            timer: 1500,
+                            timerProgressBar: true,
+                            didOpen: (toast) => {
+                                toast.addEventListener('mouseenter', Swal.stopTimer)
+                                toast.addEventListener('mouseleave', Swal.resumeTimer)
+                            }
+                        });
+                        
+                        Toast.fire({
+                            icon: 'success',
+                            title: response.message
+                        }).then(() => {
+                            location.reload();
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: response.message
+                        });
+                    }
+                },
+                error: function(response){
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'An error occurred'
+                    });
+                }   
+            })            
+            
+        })
     })
 </script>
 {%endblock%}

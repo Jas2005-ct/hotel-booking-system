@@ -16,6 +16,7 @@ class TableAssign(models.Model):
     tabereservation = models.ForeignKey(TableReservation,on_delete=models.CASCADE)
     waiter = models.ForeignKey(CustomUser,on_delete=models.CASCADE)
     assigned = models.BooleanField(default=False)
+    completed = models.BooleanField(default=False)
     
     
     

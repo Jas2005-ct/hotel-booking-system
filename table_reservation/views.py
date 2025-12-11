@@ -59,28 +59,78 @@ def TableReserverView(request):
         form = TableReservationForm()
         return render(request,'table_book_form.html',{'form':form})
 
-class TableReservedView(LoginRequiredMixin,View):
-    def get(self,request):
-        reserved = TableReservation.objects.filter(time_schedule__gte=timezone.now()).select_related('table')
-        assigned_status = TableAssign.objects.filter(tabereservation__in=OuterRef('pk'),assigned=True)
-        waiter_name = TableAssign.objects.filter(tabereservation__in=OuterRef('pk'),assigned=True).values('waiter__name')[:1]
-        reserved = reserved.annotate(assigned=Exists(assigned_status),waiter_name=Subquery(waiter_name))
+class TableReservedView(LoginRequiredMixin, View):
+    def get(self, request):
+        now = timezone.now()
+        waiter_name = TableAssign.objects.filter(
+            tabereservation=OuterRef('pk')
+        ).order_by('-id').values('waiter__name')[:1]
+        
+        is_assigned = TableAssign.objects.filter(
+            tabereservation=OuterRef('pk'),
+            assigned=True
+        )
+        reservations = TableReservation.objects.select_related('table', 'user').annotate(
+            waiter_name=Subquery(waiter_name),
+            assigned=Exists(is_assigned)
+        )
+        upcoming_reservations = reservations.filter(time_schedule__gte=now).order_by('time_schedule')
+        
+        past_reservations = reservations.filter(time_schedule__lt=now).order_by('-time_schedule')
         context = {
-            'table':reserved
+            'upcoming_reservations': upcoming_reservations,
+            'past_reservations': past_reservations,
         }
-        return render(request,'table_reserved.html',context)
+        return render(request, 'table_reserved.html', context)
 
-class TableAssignView(LoginRequiredMixin,View):
-    def post(self,request):
+class TableAssignView(LoginRequiredMixin, View):
+    def post(self, request):
         try:
             waiter = request.user
-            table = request.POST.get('pk')
+            table_id = request.POST.get('pk')
+        
+            if TableAssign.objects.filter(tabereservation_id=table_id, assigned=True).exists():
+                return JsonResponse({'success': False, 'message': 'Table is already assigned'})
+
             try:
-                assign = TableAssign.objects.create(tabereservation=TableReservation.objects.get(pk=table),waiter=waiter,assigned=True)
-                return JsonResponse({'success':True,'message':'Table Assigned Successfully'})
+                reservation = TableReservation.objects.get(pk=table_id)
+                TableAssign.objects.create(tabereservation=reservation, waiter=waiter, assigned=True)
+                return JsonResponse({'success': True, 'message': 'Table Assigned Successfully'})
             except TableReservation.DoesNotExist:
-                return JsonResponse({'success':False,'message':'Table Not Found'})
+                return JsonResponse({'success': False, 'message': 'Table Not Found'})
             except Exception as e:
-                return JsonResponse({'success':False,'message':str(e)})
+                return JsonResponse({'success': False, 'message': str(e)})
         except Exception as e:
-            return JsonResponse({'success':False,'message':str(e)})
+            return JsonResponse({'success': False, 'message': str(e)})
+
+class TableUnassignView(LoginRequiredMixin, View):
+    def post(self, request):
+        try:
+            waiter = request.user
+            table_reservation_id = request.POST.get('pk')
+            
+            # Get the active assignment
+            try:
+                assignment = TableAssign.objects.get(tabereservation_id=table_reservation_id, assigned=True)
+            except TableAssign.DoesNotExist:
+                return JsonResponse({'success': False, 'message': 'Active assignment not found'})
+            except TableAssign.MultipleObjectsReturned:
+                # Fallback if multiple exist, though shouldn't happen with proper logic
+                assignment = TableAssign.objects.filter(tabereservation_id=table_reservation_id, assigned=True).first()
+
+            if assignment.waiter != waiter:
+                return JsonResponse({'success': False, 'message': 'You are not authorized to unassign this table'})
+            
+            # Update TableLayout availability
+            table_layout = assignment.tabereservation.table
+            table_layout.available = True
+            table_layout.save()
+            
+            # Update Assignment status
+            assignment.assigned = False
+            assignment.completed = True
+            assignment.save()
+            
+            return JsonResponse({'success': True, 'message': 'Table checked out Successfully'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': str(e)})
