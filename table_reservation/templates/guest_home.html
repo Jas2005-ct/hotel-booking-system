@@ -39,6 +39,9 @@
                             <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-2">₹{{ i.price }}</span>
                         </div>
                         <p class="card-text text-muted small">{{ i.description|truncatechars:100 }}</p>
+                        <button type="button" class="add-to-cart btn btn-primary" data-bs-toggle="modal" data-menu-id="{{ i.id }}" data-bs-target="">
+                            <i class="bi bi-bag-plus-fill"></i> Add to Cart
+                        </button>
                     </div>
                 </div>
             </div>
@@ -104,7 +107,16 @@
         </div>
     </div>
 </div>
+<div class="offcanvas offcanvas-end" tabindex="-1" id="cartOffcanvas">
+    <div class="offcanvas-header">
+        <h5>Your Cart</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+    </div>
 
+    <div class="offcanvas-body">
+        {% include 'cart_sidebar.html' %}
+    </div>
+</div>
 
 {% endblock %}
 {% block extrajs %}
@@ -114,11 +126,57 @@
             $('.book-table').click(function() {
                 table_no = $(this).data('table_no');
                 var table_location = $(this).data('location');
-                console.log(table_no);
                 $('#book_tables').modal('show');
                 $('#book_tables_body').load('/table_reservation/table_book_form/?table_no='+table_no);
+                $("#cartOffcanvas .offcanvas-body").load("/orders/cart-view/");
                 
             }); 
+            $(document).on('click','.cart-items',function(){
+                $.ajax({
+                    url:"{% url 'orders:cart-create' %}",
+                    type:'GET',
+                    success:function(response){
+                        $("#cartOffcanvas .offcanvas-body").html(response);
+                    }
+                })
+            })
+            $(document).on('click','.add-to-cart',function(){
+                let menu_id = $(this).data('menu-id');
+                console.log("menu_id",menu_id)
+                $.ajax({
+                    url:"{% url 'orders:cart-create' %}",
+                    type:'POST',
+
+                    data:{
+                        'csrfmiddlewaretoken': '{{ csrf_token }}',
+                        'menu_id':menu_id,
+                        'quantity':1
+                    },
+                    success:function(response){
+                        if(response.success){
+                            $('#cart_count').text(response.cart_count);
+                            $('#cart_total').text(response.cart_total);
+                            $('#cart_items').append('<div class="cart-item" data-menu_id="'+response.menu_id+'">'+response.menu_name+'</div>');
+                            const Toast = Swal.mixin({
+                                toast: true,
+                                position: 'top-end',
+                                showConfirmButton: false,
+                                timer: 1500,
+                                timerProgressBar: true,
+                                didOpen: (toast) => {
+                                    toast.addEventListener('mouseenter', Swal.stopTimer)
+                                    toast.addEventListener('mouseleave', Swal.resumeTimer)
+                                }
+                            });
+                            Toast.fire({
+                                icon: 'success',
+                                title: 'Menu added to cart successfully'
+                            });
+                            $(".cart-items").click();
+                        }
+                    }
+                })
+            })
             $(document).on('submit','#table_book_form',function(e){
                 e.preventDefault();
                 let t_no = table_no;

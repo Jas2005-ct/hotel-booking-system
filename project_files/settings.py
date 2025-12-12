@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'accounts',
     'table_reservation',
+    'orders',
     'crispy_forms',
     'crispy_bootstrap5',
     'celery',

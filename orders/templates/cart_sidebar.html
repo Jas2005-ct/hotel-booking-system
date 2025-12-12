@@ -1,0 +1,66 @@
+{%load cart_item_multiply%}
+<div class="cart-sidebar">
+    <div class="cart-items">
+        {% if cart_items %}
+            {% for item in cart_items %}
+                <div class="cart-item d-flex mb-3">
+                    <img src="{{ item.menu.images.url }}" 
+                         alt="{{ item.menu.name }}" 
+                         class="cart-item-image me-3" 
+                         style="width: 70px; height: 70px; border-radius: 8px;">
+
+                    <div class="cart-item-details">
+                        <h5>{{ item.menu.name }}</h5>
+                        <p>Price: ₹{{ item.menu.price }}</p>
+                        <button class="decrease btn btn-primary" data-menu-id="{{ item.menu.id }}"><i class="bi bi-dash-circle"></i></button>
+                        <p>Quantity: {{ item.quantity }}</p>
+                        <button class="increase quantity btn btn-primary" data-menu-id="{{ item.menu.id }}"><i class="bi bi-plus"></i></button>
+                        <p>Total: ₹{{ item.total_price }}</p>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>Your cart is empty.</p>
+        {% endif %}
+    </div>
+
+    <hr>
+
+    <div class="cart-footer">
+        <p><strong>Total:</strong> ₹{{ total_amount }}</p>
+        <button id="checkoutBtn" class="btn btn-primary w-100">Checkout</button>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function() {
+        $('.decrease').click(function() {
+            let menu_id = $(this).data('menu-id');
+            $.ajax({
+                url:"/orders/update_cart/",
+                type:'POST',
+                data:{menu_id:menu_id,action:"decrease",csrfmiddlewaretoken:"{{csrftoken}}"},
+                success:function(data){
+                    $(".cart-items").click();
+                    location.reload();
+                }
+            })
+        })
+        $('.increase').click(function() {   
+            console.log("presses increase")
+            let menu_id = $(this).data('menu-id');
+            $.ajax({
+                url:"/orders/update_cart/",
+                type:'POST',
+                data:{menu_id:menu_id,action:"increase",csrfmiddlewaretoken:"{{csrftoken}}"},
+                success:function(data){
+                    location.reload();
+                    $(".cart-items").click();
+                }
+            })
+            .done(function(data){
+                location.reload();
+            })
+        })
+    })
+</script>
