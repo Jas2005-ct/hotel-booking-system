@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        /* Email-safe inline CSS similar to Bootstrap card */
+        body {
+            background: #f8f9fa;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 10px;
+            border: 1px solid #e2e2e2;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+
+        .header {
+            background: #198754; /* Bootstrap success color */
+            color: white;
+            padding: 18px;
+            text-align: center;
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        .content {
+            padding: 25px;
+            color: #333;
+        }
+
+        .content h2 {
+            margin-top: 0;
+            color: #198754;
+        }
+
+        .info-box {
+            background: #f1fdf5;
+            border-left: 5px solid #198754;
+            padding: 12px 15px;
+            margin: 20px 0;
+            border-radius: 6px;
+        }
+
+        .btn-primary {
+            display: inline-block;
+            background: #0d6efd;
+            color: #fff !important;
+            padding: 12px 18px;
+            border-radius: 6px;
+            text-decoration: none;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+
+        .footer {
+            padding: 15px;
+            text-align: center;
+            background: #f1f1f1;
+            font-size: 12px;
+            color: #777;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+
+        <div class="header">
+            Table Reservation Confirmed
+        </div>
+
+        <div class="content">
+
+            <h2>Hello {{ user.name }}, 👋</h2>
+
+            <p>
+                Thank you for choosing our hotel!  
+                Your <strong>table reservation</strong> has been successfully recorded.
+            </p>
+
+            <div class="info-box">
+                <p><strong>📅 Reservation Time:</strong> {{ time_schedule }}</p>
+                <p><strong>👤 Reserved By:</strong> {{ user.name }}</p>
+            </div>
+
+            <p>
+                We look forward to serving you.  
+                If you have any special requests, feel free to contact us!
+            </p>
+
+            <a href="#" class="btn-primary">View Your Reservation</a>
+
+            <p style="margin-top: 25px;">
+                Warm regards,<br>
+                <strong>Hotel Management Team</strong>
+            </p>
+
+        </div>
+
+        <div class="footer">
+            © {{ now|date:"Y" }} Hotel Management System — All Rights Reserved.
+        </div>
+
+    </div>
+
+</body>
+</html>

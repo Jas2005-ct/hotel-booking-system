@@ -16,6 +16,7 @@ import json
 from django.utils import timezone
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Exists, OuterRef,Subquery
+from table_reservation.tasks import table_reservation_guest
 
 
 @login_required(login_url='/accounts/login/')
@@ -35,6 +36,7 @@ def TableReserverView(request):
         try:
             data = json.loads(request.body)
             form = TableReservationForm(data)
+            time_sch = data.get('time_schedule')
             if form.is_valid():
                 reserve = form.save(commit=False)
                 reserve.user = request.user
@@ -45,6 +47,7 @@ def TableReserverView(request):
                     reserve.save()
                     table.available = False
                     table.save()
+                    table_reservation_guest.delay(request.user.id,time_sch)
                     return JsonResponse({'success':True,'message':'Table Reserved Successfully'})
                 except TableLayout.DoesNotExist:
                     return JsonResponse({'success':False,'message':'Table Not Reserved'})
@@ -109,13 +112,11 @@ class TableUnassignView(LoginRequiredMixin, View):
             waiter = request.user
             table_reservation_id = request.POST.get('pk')
             
-            # Get the active assignment
             try:
                 assignment = TableAssign.objects.get(tabereservation_id=table_reservation_id, assigned=True)
             except TableAssign.DoesNotExist:
                 return JsonResponse({'success': False, 'message': 'Active assignment not found'})
             except TableAssign.MultipleObjectsReturned:
-                # Fallback if multiple exist, though shouldn't happen with proper logic
                 assignment = TableAssign.objects.filter(tabereservation_id=table_reservation_id, assigned=True).first()
 
             if assignment.waiter != waiter:

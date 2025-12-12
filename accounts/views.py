@@ -10,6 +10,9 @@ from django.contrib.auth.models import Group
 from django.contrib.auth import authenticate,login,logout
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
+from django.core.mail import send_mail
+from table_reservation.tasks import send_welcome_email
+
 
 class AdminUserView(CreateView):
     model = CustomUser
@@ -70,6 +73,7 @@ class GuestUserView(CreateView):
         user.role = "guest"
         user.set_password(form.cleaned_data.get('password'))
         user = form.save()
+        send_welcome_email.delay(user.id)
         group = Group.objects.get(name='guest')
         user.groups.add(group)
         return super().form_valid(form)
