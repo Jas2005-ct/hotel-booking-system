@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from accounts.models import CustomUser,TableLayout
 from table_reservation.forms import TableReservationForm
-from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth.decorators import login_required, user_passes_test,permission_required
 from django.contrib import messages
 from django.http import HttpResponse,JsonResponse
 from django.views import View
@@ -14,11 +14,11 @@ from accounts.models import Menu,TableLayout
 from table_reservation.models import TableReservation,TableAssign
 import json
 from django.utils import timezone
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin,PermissionRequiredMixin
 from django.db.models import Exists, OuterRef,Subquery
 from table_reservation.tasks import table_reservation_guest
 
-
+    
 @login_required(login_url='/accounts/login/')
 @user_passes_test(lambda u: u.role == 'guest', login_url='/accounts/login/')
 def GuestView(request):
@@ -30,7 +30,8 @@ def GuestView(request):
     }
     return render(request,'guest_home.html',context)
 
-
+@login_required(login_url='/accounts/login/')
+@permission_required('table_reservation.add_tablereservation', raise_exception=True)
 def TableReserverView(request):
     if request.method == 'POST':
         try:
@@ -62,7 +63,8 @@ def TableReserverView(request):
         form = TableReservationForm()
         return render(request,'table_book_form.html',{'form':form})
 
-class TableReservedView(LoginRequiredMixin, View):
+class TableReservedView(LoginRequiredMixin,PermissionRequiredMixin, View):
+    permission_required = ('table_reservation.change_tablereservation')
     def get(self, request):
         now = timezone.now()
         waiter_name = TableAssign.objects.filter(
@@ -86,7 +88,8 @@ class TableReservedView(LoginRequiredMixin, View):
         }
         return render(request, 'table_reserved.html', context)
 
-class TableAssignView(LoginRequiredMixin, View):
+class TableAssignView(LoginRequiredMixin,PermissionRequiredMixin, View):
+    permission_required = ('table_reservation.change_tableassign')
     def post(self, request):
         try:
             waiter = request.user
@@ -106,7 +109,8 @@ class TableAssignView(LoginRequiredMixin, View):
         except Exception as e:
             return JsonResponse({'success': False, 'message': str(e)})
 
-class TableUnassignView(LoginRequiredMixin, View):
+class TableUnassignView(LoginRequiredMixin,PermissionRequiredMixin, View):
+    permission_required = 'table_reservation.change_tableassign'
     def post(self, request):
         try:
             waiter = request.user

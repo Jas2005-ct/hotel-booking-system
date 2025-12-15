@@ -66,6 +66,7 @@ class Menu(models.Model):
     images = models.ImageField(upload_to='menu_images/',null=True,blank=True,default='images/default.jpg')
     food_type = models.CharField(max_length=100,choices=food_type_choice,null=True,blank=True)
     food_category = models.CharField(max_length=100,choices=food_category,null=True,blank=True)
+    
 
     def __str__(self):
         return self.name

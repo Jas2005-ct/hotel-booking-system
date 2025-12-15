@@ -12,6 +12,8 @@
                 <ul class="navbar-nav ms-auto">
                     {%if user.role == 'guest'%}
                     <li class="nav-item"><a class="nav-link" href="{% url 'table_reservation:guesthome' %}">Home</a></li>
+                    {%elif user.role == 'kitchen_staff'%}
+                    <li class="nav-item"><a class="nav-link" href="{% url 'orders:kitchen-staff' %}">Home</a></li>
                     {%else%}
                     <li class="nav-item"><a class="nav-link" href="{% url 'accounts:management' %}">Home</a></li>
                     {%endif%}
@@ -20,7 +22,10 @@
                     {%if user.role == 'admin' or user.role == 'waiter'%}
                     <li class="nav-item"><a class="nav-link" href="{% url 'table_reservation:table_reserved' %}">Reservation</a></li>
                     {%endif%}
-                    <li class="nav-item"><a class="nav-link" href="#">Contact</a></li>
+                    {%if user.role != 'admin' and user.role != 'kitchen_staff'%}
+                    <li class="nav-item"><a class="nav-link" href="{% url 'orders:order-list' %}">orders</a></li>
+                    {%endif%}
+
                     <li class="nav-item"><a class="nav-link" href="{% url 'accounts:login' %}">Login</a></li>
                     {% if request.user.role == 'guest' %}
                         <button class="cart-items btn btn-outline-primary" 

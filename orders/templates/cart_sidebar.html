@@ -30,7 +30,9 @@
         <p><strong>Total:</strong> ₹{{ total_amount }}</p>
         <button id="checkoutBtn" class="btn btn-primary w-100">Checkout</button>
     </div>
+
 </div>
+
 
 <script>
     $(document).ready(function() {
@@ -41,8 +43,8 @@
                 type:'POST',
                 data:{menu_id:menu_id,action:"decrease",csrfmiddlewaretoken:"{{csrftoken}}"},
                 success:function(data){
-                    $(".cart-items").click();
                     location.reload();
+                    $(".cart-items").click();
                 }
             })
         })
@@ -62,5 +64,18 @@
                 location.reload();
             })
         })
+        $('#checkoutBtn').click(function() {
+            $.ajax({
+                url:"/orders/checkout/",
+                type:'GET',
+                success:function(html){
+                    $('#cartOffcanvas').offcanvas('hide');
+                    $('#modalContainer').html(html);
+                    $('#checkoutModal').modal('show');
+                }
+            })
+        })
+
+
     })
 </script>

@@ -117,6 +117,8 @@
         {% include 'cart_sidebar.html' %}
     </div>
 </div>
+<div id="modalContainer"></div>
+
 
 {% endblock %}
 {% block extrajs %}
@@ -224,6 +226,25 @@
                     error: function(data){
                         $('#book_tables_body').html('<div class="text-center"><i class="fa fa-spinner fa-spin"></i></div>');
                     } 
+                })
+            })
+
+            $(document).on('submit', '#orderForm', function(e) {
+                e.preventDefault();
+                $.ajax({
+                    url:"/orders/checkout/",
+                    type:'POST',
+                    data:$(this).serialize(),
+                    success:function(data){
+                        if (data.success){
+                            Swal.fire("Success", data.message, "success").then(() => {
+                                window.location.href = '/orders/order-list/';
+                            });
+                        }
+                        else{
+                            Swal.fire("Error", data.message, "error");
+                        }
+                    }
                 })
             })
         });

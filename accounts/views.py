@@ -1,3 +1,4 @@
+from django.contrib.auth.decorators import user_passes_test
 from django.shortcuts import render
 from accounts.models import CustomUser,Menu,TableLayout
 from accounts.forms import (CustomUserForm,MenuForm,TableLayoutForm,LoginForm)
@@ -12,6 +13,8 @@ from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.core.mail import send_mail
 from table_reservation.tasks import send_welcome_email
+from django.contrib.auth.mixins import LoginRequiredMixin,PermissionRequiredMixin
+from common.decorators import role_required
 
 
 class AdminUserView(CreateView):
@@ -51,7 +54,7 @@ class KitchenUserView(CreateView):
     model = CustomUser
     form_class = CustomUserForm
     template_name = 'kitchenuserform.html'
-    success_url = '/accounts/'
+    success_url = '/orders/kitchen-staff/'
     
     def form_valid(self,form):
         user = form.save(commit=False)
@@ -59,7 +62,7 @@ class KitchenUserView(CreateView):
         user.set_password(form.cleaned_data.get('password'))
         user = form.save()
         login(self.request,user)
-        return redirect('accounts:management')
+        return redirect('orders:kitchen-staff')
 
 
 class GuestUserView(CreateView):
@@ -91,7 +94,9 @@ def login_view(request):
                     return redirect('accounts:management')
                 if user.role == 'guest':
                     return redirect('table_reservation:guesthome')
-                return redirect('accounts:management')
+                if user.role == 'kitchen_staff':
+                    return redirect('orders:kitchen-staff')
+                return JsonResponse({'status': 'False','message':'Unauthorized access'})
             else:
                 messages.error(request, 'Invalid username or password')
     else:
@@ -103,6 +108,7 @@ def logout_view(request):
     return redirect('accounts:login')   
 
 @login_required
+@user_passes_test(role_required(['admin','waiter']))
 def ManagementView(request):
     menus = Menu.objects.all()
     tables = TableLayout.objects.all()
@@ -113,11 +119,12 @@ def ManagementView(request):
     return render(request,'accounts_home.html',context)
 
 
-class MenuCreate(CreateView):
+class MenuCreate(LoginRequiredMixin,PermissionRequiredMixin,CreateView):
     model = Menu
     form_class = MenuForm
     template_name = 'menucreateform.html'
     success_url = reverse_lazy('accounts:management')
+    permission_required = 'accounts.add_menu'
 
     def form_valid(self, form):
         self.object = form.save()
@@ -125,11 +132,12 @@ class MenuCreate(CreateView):
             return JsonResponse({'status': 'success'})
         return super().form_valid(form)
 
-class MenuUpdate(UpdateView):
+class MenuUpdate(LoginRequiredMixin,PermissionRequiredMixin,UpdateView):
     model = Menu
     form_class = MenuForm
     template_name = 'menucreateform.html'
     success_url = reverse_lazy('accounts:management')
+    permission_required = 'accounts.change_menu'
 
     def form_valid(self, form):
         self.object = form.save()
@@ -137,7 +145,8 @@ class MenuUpdate(UpdateView):
             return JsonResponse({'status': 'success'})
         return super().form_valid(form)
 
-class MenuDelete(View):
+class MenuDelete(LoginRequiredMixin,PermissionRequiredMixin,View):
+    permission_required = 'accounts.delete_menu'
     def post(self,request,pk):
         try:
             obj = Menu.objects.get(pk=pk)
@@ -146,11 +155,12 @@ class MenuDelete(View):
         except:
             return JsonResponse({'status':'failed'})
 
-class TableCreate(CreateView):
+class TableCreate(LoginRequiredMixin,PermissionRequiredMixin,CreateView):
     model = TableLayout
     form_class = TableLayoutForm
     template_name = 'tablesetform.html'
     success_url = reverse_lazy('accounts:management')  
+    permission_required = 'accounts.add_tablelayout'
 
     def form_valid(self, form):
         self.object = form.save()
@@ -159,11 +169,12 @@ class TableCreate(CreateView):
         return super().form_valid(form)
 
 
-class TableUpdate(UpdateView):
+class TableUpdate(LoginRequiredMixin,PermissionRequiredMixin,UpdateView):
     model = TableLayout
     form_class = TableLayoutForm
     template_name = 'tablesetform.html'
     success_url = reverse_lazy('accounts:management')
+    permission_required = 'accounts.change_tablelayout'
 
     def form_valid(self, form):
         self.object = form.save()
@@ -181,7 +192,8 @@ class TableDelete(View):
         except:
             return JsonResponse({'status':'failed'})
 
-class TableStatus(View):
+class TableStatus(LoginRequiredMixin,PermissionRequiredMixin,View):
+    permission_required = 'accounts.change_tablelayout'
     def post(self,request,pk):
         try:
             obj = TableLayout.objects.get(pk=pk)

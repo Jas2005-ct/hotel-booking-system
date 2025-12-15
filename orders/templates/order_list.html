@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+{% block title %}Order List{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        {% if user.role == 'guest' %}
+        <h1 class="display-5 fw-bold text-primary">Your Orders</h1>
+        {% elif user.role == 'waiter' %}
+        <h1 class="display-5 fw-bold text-primary">Orders Ready for Pickup</h1>
+        {% endif %}
+    </div>
+
+    {% if orders %}
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        {% for details in orders %}
+        {%if details.status == 'progress' or details.status == 'ready' %}
+        <div class="col">
+            <div class="card h-100 shadow-sm border-0 rounded-4 overflow-hidden">
+                <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                    <span class="fw-bold text-secondary">Order #{{ details.id }}</span>
+                    {% if details.status == 'ready' %}
+                       <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3">Ready</span>
+                    {% elif details.status == 'completed' %}
+                       <span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill px-3">Completed</span>
+                    {% else %}
+                       <span class="badge bg-warning bg-opacity-10 text-warning rounded-pill px-3">{{ details.status|title }}</span>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    {% if user.role == 'waiter' %}
+                    <div class="mb-3">
+                         <h6 class="text-muted text-uppercase small fw-bold mb-2">Pickup Details</h6>
+                         <div class="d-flex align-items-center mb-1">
+                             <i class="bi bi-clock me-2 text-primary"></i>
+                             <span>{{ details.pickup_time|time:"H:i" }}</span>
+                         </div>
+                         <div class="d-flex align-items-center">
+                             <i class="bi bi-car-front me-2 text-primary"></i>
+                             <span>{{ details.vechile_number|default:"N/A" }}</span>
+                         </div>
+                    </div>
+                    {% else %}
+                    <div class="mb-3">
+                        <small class="text-muted"><i class="bi bi-calendar3 me-2"></i>{{ details.order_date|date:"M d, Y" }}</small>
+                    </div>
+                    {% endif %}
+
+                    <h6 class="text-muted text-uppercase small fw-bold mb-2">Items</h6>
+                    <ul class="list-group list-group-flush mb-3 rounded-3">
+                        {% for item in details.order_items.all %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0 border-0 py-1">
+                            <span>{{ item.menu.name }}</span>
+                            <span class="badge bg-light text-dark rounded-pill">x{{ item.quantity }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+
+                    <div class="mt-auto pt-3 border-top d-flex justify-content-between align-items-center">
+                        <span class="text-muted">Total</span>
+                        <span class="fs-5 fw-bold text-primary">₹{{ details.total_amount }}</span>
+                    </div>
+                </div>
+                {% if user.role == 'waiter' %}
+                <div class="card-footer bg-white border-0 pb-3 pt-0">
+                    <button type="button" data-id="{{ details.id }}" class="complete-order btn btn-primary w-100 rounded-pill mt-2">
+                        <i class="bi bi-check-circle-fill me-2"></i>Mark as Delivered
+                    </button>
+                </div>
+                {% endif %}
+
+            </div>
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <div class="mb-3">
+            <i class="bi bi-basket3 display-1 text-muted opacity-25"></i>
+        </div>
+        <h3 class="text-muted">No orders found</h3>
+    </div>
+    {% endif %}
+</div>
+
+<hr>
+<h1>Completed Orders</h1>
+    {%for i in orders%}
+    {%if i.status == 'completed'%}
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Order #{{ i.id }}</h5>
+            <p class="card-text">Total Amount: {{ i.total_amount }}</p>
+            <p class="card-text">Order Date: {{ i.order_date }}</p>
+        </div>
+    </div>
+    {%endif%}
+    {% endfor %}
+{% endblock %}
+
+{% block extrajs %}
+<script>
+    $(document).on('click','.complete-order',function(){
+        let id = $(this).data('id');
+        let button = $(this);
+        
+        Swal.fire({
+            title: 'Confirm Delivery',
+            text: "Mark this order as delivered?",
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes, delivered!'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: '/orders/service-staff/',
+                    type: 'POST',
+                    data: {
+                        'id': id,
+                        'csrfmiddlewaretoken': '{{csrf_token}}',
+                    },
+                    success: function(response) {
+                        if(response.success){
+                            Swal.fire(
+                                'Delivered!',
+                                'Order status has been updated.',
+                                'success'
+                            ).then(() => {
+                                location.reload();
+                            });
+                        }
+                    },
+                    error: function(error) {
+                        Swal.fire('Error', 'Something went wrong', 'error');
+                    }
+                })
+            }
+        })
+    })  
+</script>
+{% endblock %}
+

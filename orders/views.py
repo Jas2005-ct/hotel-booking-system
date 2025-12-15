@@ -7,6 +7,12 @@ from django.urls import reverse_lazy
 from django.http import HttpResponse
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from datetime import datetime
+from django.utils import timezone
+from django.contrib.auth.mixins import LoginRequiredMixin
+from orders.forms import OrderForm
+from django.db.models import Prefetch
+from orders.tasks import order_confirmation_email
 # Create your views here.
 
 class CartCreateView(View):
@@ -65,3 +71,108 @@ def update_cart(request):
     if cart_items.quantity == 0:
         cart_items.delete()
     return JsonResponse({'success': True, 'message': 'Cart updated successfully'})  
+
+
+class OrderCreateView(View):
+    def post(self,request):
+        try:
+            form = OrderForm(request.POST)
+            if not form.is_valid():
+                return JsonResponse({'success': False, 'message': 'Invalid form data'})
+            vechile_number = form.cleaned_data['vechile_number']
+            pickup_time = form.cleaned_data['pickup_time']
+            user = request.user
+            cart_user = Cart_User.objects.get(user=user)
+            cart_items = Cart_Items.objects.filter(cart_user=cart_user)
+            if not cart_items:
+                return JsonResponse({'success': False, 'message': 'Cart is empty'})
+            total_amount = sum(item.total_price for item in cart_items)
+            date = datetime.now()
+            ordered = order.objects.create(cart_user=cart_user,total_amount=total_amount,vechile_number=vechile_number,pickup_time=pickup_time)
+            try:
+                for i in cart_items:
+                    order_items.objects.create(cart_user=cart_user,order=ordered,menu=i.menu,quantity=i.quantity)
+                cart_items.delete()
+                order_confirmation_email.delay(user.id)
+            except Exception as e:
+                print('here')
+                return JsonResponse({'success': False, 'message': str(e)})
+            print("order successfullyy placed")
+            return JsonResponse({'success': True, 'message': 'Order created successfully'})
+        except Cart_Items.DoesNotExist:
+            print('cart here')
+            return JsonResponse({'success': False, 'message': 'Cart items not found'})
+        except Exception as e:
+            print('no here',e)
+            return JsonResponse({'success': False, 'message': str(e)})
+
+    def get(self,request):
+        form = OrderForm()
+        return render(request,'orderform.html',{'form':form})
+
+class OrderListView(LoginRequiredMixin,View): 
+    def get(self,request):
+        user = request.user
+        print(user.id)
+        if user.role == 'guest':
+            try:
+                cart_user = Cart_User.objects.get(user=user)
+            except Cart_User.DoesNotExist:
+                return JsonResponse({'success': False, 'message': 'Cart user not found'})
+            try:
+                orders = order.objects.filter(cart_user=cart_user).prefetch_related('order_items').order_by('-pickup_time')
+                tot = 0
+                for i in orders:
+                    tot += i.total_amount
+                print(tot)
+            except Exception as e:
+                return JsonResponse({'success': False, 'message': str(e)})
+        elif user.role == 'waiter':
+            try:
+                orders = order.objects.filter(status='ready').prefetch_related('order_items').order_by('-pickup_time')
+                tot = 0
+                for i in orders:
+                    tot += i.total_amount
+                print(tot)
+            except Exception as e:
+                return JsonResponse({'success': False, 'message': str(e)})
+        return render(request,'order_list.html',{'orders':orders})
+
+class KitchenStaffView(View):
+    def get(self,request):
+        current_time = timezone.localtime().time()
+        user = request.user
+        orders = order.objects.filter(pickup_time__gte=current_time).prefetch_related(Prefetch('order_items',queryset=order_items.objects.select_related('menu'))).order_by('-pickup_time')
+        order_taken = order_kitchen_staff.objects.filter(kitchen_staff=user).select_related('order').order_by('-order__pickup_time')
+        for i in orders:
+            for j in i.order_items.all():
+                print(j.menu.name)
+        return render(request,'kitchen_staff.html',{'orders':orders,'order_taken':order_taken})
+    
+    def post(self,request):
+        user = request.user
+        order_id = request.POST.get('order_id')
+        try:
+            orders = order.objects.get(id=order_id)
+        except order.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'Order not found'})
+        try:
+            order_kitchen_staff.objects.create(order=orders,kitchen_staff=user)
+            orders.kitchen_staff = user
+            orders.status = 'ready'
+            orders.save()
+            print(f'order created to kitchen')
+        except Exception as e:
+            print(e)
+            return JsonResponse({'success': False, 'message': 'Order not found'})
+        return JsonResponse({'success': True, 'message': 'Order ready successfully'})
+
+class ServiceStaffView(View):
+    def post(self,request):
+        id = request.POST.get('id')
+        print(id)
+        orders = order.objects.get(id=id)
+        orders.status = 'completed'
+        orders.waiter = request.user
+        orders.save()
+        return JsonResponse({'success': True, 'message': 'Order completed successfully'})
