@@ -7,7 +7,10 @@ class TableReservation(models.Model):
     user = models.ForeignKey(CustomUser,on_delete=models.CASCADE)
     table = models.ForeignKey(TableLayout,on_delete=models.CASCADE)
     duration = models.DurationField()
-    time_schedule = models.DateTimeField()
+    time_schedule = models.DateField(null=True,blank=True)
+    start_time = models.TimeField(null=True,blank=True)
+    end_time = models.TimeField(null=True,blank=True)
+    seat = models.IntegerField(null=True,blank=True)
     
     def __str__(self):
         return f"{self.user.name} - {self.table.table_no}"

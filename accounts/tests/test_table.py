@@ -1,6 +1,9 @@
 from django.test import TestCase
 from django.urls import reverse
 from accounts.models import CustomUser, TableLayout
+from table_reservation.models import TableReservation, TableAssign
+from datetime import date, time, timedelta, datetime
+from django.utils import timezone
 
 class TableTest(TestCase):
     def setUp(self):
@@ -53,6 +56,7 @@ class TableTest(TestCase):
         self.assertEqual(response.json()['status'], 'success')
         self.assertEqual(TableLayout.objects.count(), 0)
 
+
     def test_table_status(self):
         url = reverse('accounts:tablestatus', args=[self.table.pk])
         data = {'status': 'unavailable'}
@@ -66,3 +70,5 @@ class TableTest(TestCase):
         response = self.client.post(url, data)
         self.table.refresh_from_db()
         self.assertTrue(self.table.available)
+
+
