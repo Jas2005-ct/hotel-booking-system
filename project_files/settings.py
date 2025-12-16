@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'accounts',
     'table_reservation',
     'orders',
+    'admin_report',
     'crispy_forms',
     'crispy_bootstrap5',
     'celery',
