@@ -9,13 +9,16 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from datetime import datetime
 from django.utils import timezone
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin,UserPassesTestMixin,PermissionRequiredMixin
+from django.contrib.auth.decorators import login_required, user_passes_test
 from orders.forms import OrderForm
 from django.db.models import Prefetch
 from orders.tasks import order_confirmation_email
 # Create your views here.
 
-class CartCreateView(View):
+class CartCreateView(LoginRequiredMixin,UserPassesTestMixin,View):
+    def test_func(self):
+        return self.request.user.role == 'guest'
     def get(self, request):
         cart_user,created = Cart_User.objects.get_or_create(user=request.user)  
         if created:
@@ -46,6 +49,8 @@ class CartCreateView(View):
         except Exception as e:
             return JsonResponse({'success': False, 'message': str(e)})
 @csrf_exempt
+@login_required
+@user_passes_test(lambda u: u.role == 'guest')
 def update_cart(request):
     if request.method != 'POST':
         return JsonResponse({'success':False,'message':'Invalid request method'})
@@ -73,7 +78,9 @@ def update_cart(request):
     return JsonResponse({'success': True, 'message': 'Cart updated successfully'})  
 
 
-class OrderCreateView(View):
+class OrderCreateView(LoginRequiredMixin,UserPassesTestMixin,View):
+    def test_func(self):
+        return self.request.user.role == 'guest'
     def post(self,request):
         try:
             form = OrderForm(request.POST)
@@ -138,7 +145,9 @@ class OrderListView(LoginRequiredMixin,View):
                 return JsonResponse({'success': False, 'message': str(e)})
         return render(request,'order_list.html',{'orders':orders})
 
-class KitchenStaffView(View):
+class KitchenStaffView(LoginRequiredMixin,UserPassesTestMixin,View):
+    def test_func(self):
+        return self.request.user.role == 'kitchen_staff'
     def get(self,request):
         current_time = timezone.localtime().time()
         user = request.user
@@ -167,7 +176,9 @@ class KitchenStaffView(View):
             return JsonResponse({'success': False, 'message': 'Order not found'})
         return JsonResponse({'success': True, 'message': 'Order ready successfully'})
 
-class ServiceStaffView(View):
+class ServiceStaffView(LoginRequiredMixin,UserPassesTestMixin,View):
+    def test_func(self):
+        return self.request.user.role == 'waiter'
     def post(self,request):
         id = request.POST.get('id')
         print(id)
