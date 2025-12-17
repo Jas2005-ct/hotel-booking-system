@@ -26,14 +26,32 @@ from table_reservation.tasks import table_reservation_guest
 @user_passes_test(lambda u: u.role == 'guest', login_url='/accounts/login/')
 def GuestView(request):
     menu = Menu.objects.all()
-    tables = TableReservation.objects.filter(user=request.user).select_related('table')
-    tables_assigned = TableAssign.objects.filter(tabereservation__user=request.user).first()
+    waiter_name = TableAssign.objects.filter(tabereservation=OuterRef('pk')).order_by('-id').values('waiter__name')[:1]
+    waiter_phone = TableAssign.objects.filter(tabereservation=OuterRef('pk')).order_by('-id').values('waiter__phone_no')[:1]
+    is_assigned = TableAssign.objects.filter(tabereservation=OuterRef('pk'), assigned=True)
+    is_completed = TableAssign.objects.filter(tabereservation=OuterRef('pk'), completed=True)
+    reservations = TableReservation.objects.filter(user=request.user).select_related('table').annotate(
+        waiter_name=Subquery(waiter_name),
+        waiter_phone=Subquery(waiter_phone),
+        assigned=Exists(is_assigned),
+        completed=Exists(is_completed)
+    )
+    upcoming_reservations = reservations.filter(
+        time_schedule__gte=timezone.now().date(),
+        completed=False
+    ).order_by('time_schedule', 'start_time')
+    past_reservations = reservations.filter(
+        completed=True
+    ).union(
+        reservations.filter(time_schedule__lt=timezone.now().date())
+    ).order_by('-time_schedule', '-start_time')
+
     context = {
-        'menus':menu,
-        'tables':tables,
-        'tables_assigned':tables_assigned
+        'menus': menu,
+        'upcoming_reservations': upcoming_reservations,
+        'past_reservations': past_reservations,
     }
-    return render(request,'guest_home.html',context)
+    return render(request, 'guest_home.html', context)
 
 
 def TableReserverView(request):
@@ -43,12 +61,8 @@ def TableReserverView(request):
             if not form.is_valid():
                 return JsonResponse({
                     'success': False,
-                    'message': render_to_string(
-                        'table_book_form.html',
-                        {'form': form},
-                        request=request
-                    )
-                })
+                    'errors': form.errors
+                },status=400)
             seat = int(form.cleaned_data['seat'])
             current_time_schedule = form.cleaned_data['time_schedule']
             current_start_time = form.cleaned_data['start_time']
@@ -81,6 +95,8 @@ class TableReservedView(LoginRequiredMixin, View):
         waiter_name = TableAssign.objects.filter(
             tabereservation=OuterRef('pk')
         ).order_by('-id').values('waiter__name')[:1]
+
+        waiter_id = TableAssign.objects.filter(tabereservation = OuterRef('pk')).order_by('-id').values('waiter__id')[:1]
         
         is_assigned = TableAssign.objects.filter(
             tabereservation=OuterRef('pk'),
@@ -92,16 +108,14 @@ class TableReservedView(LoginRequiredMixin, View):
         )
         reservations = TableReservation.objects.select_related('table', 'user').annotate(
             waiter_name=Subquery(waiter_name),
+            waiter_id=Subquery(waiter_id),
             assigned=Exists(is_assigned),
             completed=Exists(is_completed)
         )
-        upcoming_reservations = reservations.filter(time_schedule__gte=date).order_by('-time_schedule','-start_time')
+        upcoming_reservations = reservations.filter(time_schedule__gte=date,completed=False).order_by('-time_schedule','-start_time')
         
-        past_reservations = reservations.filter(time_schedule__lt=date,completed=True).order_by('-time_schedule','-start_time')
-        if request.user.role == 'admin':
-            table_res = TableAssign.objects.select_related('tabereservation','waiter').order_by('-id')
-        else:
-            table_res = TableAssign.objects.select_related('tabereservation','waiter').filter(tabereservation__user=request.user).order_by('-id')
+        past_reservations = reservations.filter(completed=True).order_by('-time_schedule','-start_time')
+        table_res = TableAssign.objects.select_related('tabereservation','waiter').order_by('-id') 
         context = {
             'upcoming_reservations': upcoming_reservations,
             'past_reservations': past_reservations,
@@ -143,17 +157,47 @@ class TableUnassignView(LoginRequiredMixin, View):
 
             if assignment.waiter != waiter:
                 return JsonResponse({'success': False, 'message': 'You are not authorized to unassign this table'})
-            
-            # Update TableLayout availability
             table_layout = assignment.tabereservation.table
             table_layout.available = True
             table_layout.save()
-            
-            # Update Assignment status
             assignment.assigned = False
             assignment.completed = True
             assignment.save()
             
             return JsonResponse({'success': True, 'message': 'Table checked out Successfully'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': str(e)})
+
+class DeleteTableReservation(LoginRequiredMixin, View):
+    def post(self, request):
+        try:
+            table_reservation_id = request.POST.get('pk')
+            user = request.user
+            try:
+                reservation = TableReservation.objects.get(pk=table_reservation_id)
+                if reservation.user != user and user.role != 'admin':
+                    return JsonResponse({'success': False, 'message': 'You are not authorized to delete this reservation'})
+            except TableReservation.DoesNotExist:
+                return JsonResponse({'success': False, 'message': 'Table reservation not found'})
+            now = timezone.now()
+            booking_dt = datetime.combine(reservation.time_schedule, reservation.start_time)
+            if timezone.is_naive(booking_dt):
+                booking_dt = timezone.make_aware(booking_dt, timezone.get_current_timezone())
+            if booking_dt < now:
+                 return JsonResponse({'success': False, 'message': 'Cannot delete past reservations'})
+            is_assigned = TableAssign.objects.filter(tabereservation=reservation, assigned=True).exists()
+            if is_assigned:
+                time_remaining = booking_dt - now
+                if time_remaining < timedelta(hours=2):
+                    return JsonResponse({
+                        'success': False, 
+                        'message': 'Cannot delete confirmed reservation less than 2 hours before start.'
+                    })
+            reservation.delete()
+            reservation.table.available = True
+            reservation.table.save()
+            
+            return JsonResponse({'success': True, 'message': 'Reservation deleted successfully'})
+
         except Exception as e:
             return JsonResponse({'success': False, 'message': str(e)})
