@@ -204,43 +204,87 @@
 
                 
             }); 
-                $(document).on('click', '.delete-table-reservation', function () {
-                var pk = $(this).data('pk');
-                Swal.fire({
-                    title: 'Are you sure?',
-                    text: "The table will be deleted!",
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonText: 'Yes, delete it!',
-                    cancelButtonText: 'No'
-                }).then((result) => {
-            if (result.isConfirmed) {
+            $(document).on('click','.cart-items',function(){
                 $.ajax({
-                    url: `/table_reservation/table_delete/`,
-                    type: 'POST',
-                    data: {
-                        pk: pk,
-                        csrfmiddlewaretoken: '{{ csrf_token }}'
-                    },
-                    success: function (data) {
-                        if (data.success) {
-                            Swal.fire('Deleted!', data.message, 'success').then(() => {
-                                location.reload();
-                            });
-                        } else {
-                            Swal.fire('Error', data.message, 'error');
-                        }
-                    },
-                    error: function () {
-                        Swal.fire('Error', 'Something went wrong with the request', 'error');
+                    url:"{% url 'orders:cart-create' %}",
+                    type:'GET',
+                    success:function(response){
+                        $("#cartOffcanvas .offcanvas-body").html(response);
                     }
-
                 })
-            }
-        })
-    })
+            })
+            $(document).on('click','.add-to-cart',function(){
+                let menu_id = $(this).data('menu-id');
+                console.log("menu_id",menu_id)
+                $.ajax({
+                    url:"{% url 'orders:cart-create' %}",
+                    type:'POST',
 
+                    data:{
+                        'csrfmiddlewaretoken': '{{ csrf_token }}',
+                        'menu_id':menu_id,
+                        'quantity':1
+                    },
+                    success:function(response){
+                        if(response.success){
+                            $('#cart_count').text(response.cart_count);
+                            $('#cart_total').text(response.cart_total);
+                            $('#cart_items').append('<div class="cart-item" data-menu_id="'+response.menu_id+'">'+response.menu_name+'</div>');
+                            const Toast = Swal.mixin({
+                                toast: true,
+                                position: 'top-end',
+                                showConfirmButton: false,
+                                timer: 1500,
+                                timerProgressBar: true,
+                                didOpen: (toast) => {
+                                    toast.addEventListener('mouseenter', Swal.stopTimer)
+                                    toast.addEventListener('mouseleave', Swal.resumeTimer)
+                                }
+                            });
+                            Toast.fire({
+                                icon: 'success',
+                                title: 'Menu added to cart successfully'
+                            });
+                            $(".cart-items").click();
+                        }
+                    }
+                })
+            })
+            $(document).on('click', '.delete-table-reservation', function () {
+            var pk = $(this).data('pk');
+            Swal.fire({
+                title: 'Are you sure?',
+                text: "The table will be deleted!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, delete it!',
+                cancelButtonText: 'No'
+            }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: `/table_reservation/table_delete/`,
+                            type: 'POST',
+                            data: {
+                                pk: pk,
+                                csrfmiddlewaretoken: '{{ csrf_token }}'
+                            },
+                            success: function (data) {
+                                if (data.success) {
+                                    Swal.fire('Deleted!', data.message, 'success').then(() => {
+                                        location.reload();
+                                    });
+                                } else {
+                                    Swal.fire('Error', data.message, 'error');
+                                }
+                            },
+                            error: function () {
+                                Swal.fire('Error', 'Something went wrong with the request', 'error');
+                            }
 
+                        })
+                    }
+                })
+            })
             $(document).on('submit','#table_book_form',function(e){
                 e.preventDefault();
                 console.log('form submitted');
