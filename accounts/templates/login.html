@@ -1,9 +1,46 @@
 {% extends 'base.html' %}
 {% load crispy_forms_tags %}
+
+{% block title %}Login{% endblock %}
+
 {% block content %}
-<form action="" method="post">
-    {% csrf_token %}
-    {{ form|crispy}}
-    <button class="btn btn-primary" type="submit">Login</button>
-</form>
+<div class="row justify-content-center align-items-center" style="min-height: 70vh;">
+    <div class="col-md-6 col-lg-5 col-xl-4">
+        <div class="card shadow-lg border-0 rounded-4">
+            <div class="card-header bg-primary text-white text-center py-4 rounded-top-4">
+                <h3 class="mb-0 fw-bold">Welcome Back</h3>
+                <p class="mb-0 opacity-75 small">Please login to your account</p>
+            </div>
+            <div class="card-body p-4 p-md-5">
+                <form action="" method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        {{ form|crispy }}
+                    </div>
+                    <div class="d-grid gap-2 mt-4">
+                        <button class="btn btn-primary btn-lg" type="submit">
+                            <i class="bi bi-box-arrow-in-right me-2"></i>Login
+                        </button>
+                    </div>
+                </form>
+            </div>
+            <div class="card-footer text-center py-3 bg-light rounded-bottom-4 border-0">
+                <div class="mb-3">
+                    <p class="small text-muted mb-2">Don't have an account? Register as:</p>
+                    <div class="d-flex flex-wrap justify-content-center gap-2">
+                        <a href="{% url 'accounts:guestuser' %}" class="btn btn-sm btn-outline-primary rounded-pill px-3">Guest</a>
+                        <a href="{% url 'accounts:waiteruser' %}" class="btn btn-sm btn-outline-secondary rounded-pill px-3">Waiter</a>
+                        <a href="{% url 'accounts:kitchenuser' %}" class="btn btn-sm btn-outline-success rounded-pill px-3">Chef</a>
+                        <a href="{% url 'accounts:adminuser' %}" class="btn btn-sm btn-outline-dark rounded-pill px-3">Admin</a>
+                    </div>
+                </div>
+                <div class="small border-top pt-2">
+                    <a href="{% url 'accounts:logout' %}" class="text-muted text-decoration-none hover-underline">
+                        <i class="bi bi-box-arrow-left me-1"></i>Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

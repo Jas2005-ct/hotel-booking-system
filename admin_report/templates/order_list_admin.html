@@ -1,0 +1,82 @@
+{%extends 'base.html'%}
+{%block content%}
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table id="orderslists" class="table table-hover table-striped table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Order ID</th>
+                                    <th>Customer Name</th>
+                                    <th>Order Date</th>
+                                    <th>Total Amount</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="orderModal" tabindex="-1" aria-labelledby="orderModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="orderModalLabel">Order Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="orderDetails">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+{%endblock%}
+{%block extrajs%}
+    <script>
+        $(document).ready(function(){
+            $('#orderslists').DataTable({
+                serverSide: true,
+                processing:true,
+                ajax:{url:"/admin_report/order-list-data/",type:"GET"},
+                pageLength: 10,
+                lengthMenu: [10, 25, 50, 100],
+                columns:[
+                    {data:'pk',name:'pk',orderable:true,searchable:true},
+                    {data:'cart_user__user__name',name:'cart_user__user__name',orderable:true,searchable:true},
+                    {data:'order_date',name:'order_date',orderable:true,searchable:true},
+                    {data:'total_amount',name:'total_amount',orderable:true,searchable:true},
+                    {data:'view',name:'view',orderable:false,searchable:false}
+                ]
+            })
+        })
+        
+        $('#orderModal').on('show.bs.modal', function (event) {
+            var button = $(event.relatedTarget);
+            var orderId = button.data('order-id');
+            var modal = $(this);
+            var contentContainer = modal.find('#orderDetails');
+            contentContainer.html('<div class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>');
+
+            $.ajax({
+                url: '/admin_report/order-detail/' + orderId + '/',
+                type: 'GET',
+                success: function(response){
+                    contentContainer.html(response);
+                },
+                error: function(){
+                    contentContainer.html('<div class="alert alert-danger">Error loading order details. Please try again.</div>');
+                }
+            });
+        });
+    </script>
+{%endblock%}

@@ -9,7 +9,9 @@
     
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
@@ -20,8 +22,6 @@
 
     {% block extrastyle %}{% endblock %}
 </head>
-<script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
-    
     <!-- Bootstrap Bundle JS -->
     {% comment %} <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script> {% endcomment %}
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
@@ -39,19 +39,19 @@
     {% include 'footer.html' %}
     <!-- jQuery -->
     
+    {% block extrajs %}{% endblock %}
+    
+    <script>
+    
+    $(document).ajaxError(function (event, xhr) {
+        if (xhr.status === 403) {
+            Swal.fire({
+                icon: "error",
+                title: "Permission Denied",
+                text: xhr.responseJSON?.message || "You are not allowed to do this"
+            });
+        }
+    });
+    </script>
 </body>
 </html>
-{% block extrajs %}{% endblock %}
-
-<script>
-
-$(document).ajaxError(function (event, xhr) {
-    if (xhr.status === 403) {
-        Swal.fire({
-            icon: "error",
-            title: "Permission Denied",
-            text: xhr.responseJSON?.message || "You are not allowed to do this"
-        });
-    }
-});
-</script>

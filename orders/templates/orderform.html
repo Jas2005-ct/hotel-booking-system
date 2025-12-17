@@ -1,39 +1,25 @@
-{% comment %} {% load crispy_forms_tags %}
-{% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-8 col-lg-6">
-        <div class="card shadow-lg border-0 rounded-4">
-            <div class="card-header bg-primary text-white text-center py-4 rounded-top-4">
-                <h2 class="mb-0 fw-bold"><i class="bi bi-cart me-2"></i>Order Food</h2>
+{% load crispy_forms_tags %}
+
+<div class="modal fade" id="checkoutModal" tabindex="-1" aria-labelledby="checkoutModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow-lg border-0 rounded-4">
+            <div class="modal-header bg-primary text-white rounded-top-4">
+                <h5 class="modal-title fw-bold" id="checkoutModalLabel">
+                    <i class="bi bi-cart-check me-2"></i>Complete Your Order
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="card-body p-4 p-md-5">
-                <h5 class="card-title text-center text-muted mb-4">Enter the Order Details</h5>
-                <form action="" method="post" class="needs-validation">
+            <div class="modal-body p-4">
+                <form id="orderForm" method="POST">
                     {% csrf_token %}
                     {{ form|crispy }}
                     <div class="d-grid gap-2 mt-4">
-                        <button class="btn btn-primary btn-lg shadow-sm" type="submit">
-                            Submit
+                        <button class="btn btn-primary btn-lg rounded-pill shadow-sm" type="submit">
+                            <i class="bi bi-check-lg me-2"></i>Confirm Order
                         </button>
-                        <a href="#" class="btn btn-outline-secondary btn-sm mt-2">Cancel</a>
                     </div>
                 </form>
             </div>
         </div>
     </div>
-</div>
-{% endblock %} {% endcomment %}
-{% load crispy_forms_tags %}
-<div class="modal fade" id="checkoutModal">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <form id="orderForm" method="POST">
-        {% csrf_token %}
-        {{ form|crispy }}
-        <button class="btn btn-success w-100" type="submit">
-          Confirm Order
-        </button>
-      </form>
-    </div>
-  </div>
 </div>

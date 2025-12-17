@@ -2,18 +2,14 @@
 
 {% block content %}
 
-{% if not user.is_authenticated %}
 <div class="container text-center">
     <h2 class="mb-4">Welcome, {{ request.user.name }}</h2>
-
     <div class="d-grid gap-3 col-6 mx-auto">
         <a href="{% url 'accounts:adminuser' %}" class="btn btn-primary btn-lg">Admin</a>
         <a href="{% url 'accounts:waiteruser' %}" class="btn btn-success btn-lg">Waiter</a>
         <a href="{% url 'accounts:guestuser' %}" class="btn btn-warning btn-lg text-dark">Guest</a>
-        <a href="#" class="btn btn-danger btn-lg">Kitchen Chef</a>
+        <a href="{% url 'accounts:kitchenuser' %}" class="btn btn-danger btn-lg">Kitchen Chef</a>
+        <a href="{% url 'accounts:login' %}" class="btn btn-secondary btn-lg">Login</a>
     </div>
 </div>
-{% else %}
-    
-{% endif %}
 {% endblock %}

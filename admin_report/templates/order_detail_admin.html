@@ -1,0 +1,93 @@
+{% if order_item %}
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <strong>Order ID:</strong> #{{ order_item.0.order.id }}
+        </div>
+        <div class="col-md-6 text-end">
+            <strong>Date:</strong> {{ order_item.0.order.order_date|date:"F j, Y, g:i a" }}
+        </div>
+    </div>
+    
+    <div class="table-responsive">
+        <table class="table table-borderless align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th scope="col" style="width: 10%">Image</th>
+                    <th scope="col" style="width: 40%">Item</th>
+                    <th scope="col" style="width: 15%">Price</th>
+                    <th scope="col" style="width: 15%" class="text-center">Qty</th>
+                    <th scope="col" style="width: 20%" class="text-end">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in order_item %}
+                <tr>
+                    <td>
+                        {% if item.menu.images %}
+                            <img src="{{ item.menu.images.url }}" alt="{{ item.menu.name }}" class="img-fluid rounded" style="width: 50px; height: 50px; object-fit: cover;">
+                        {% else %}
+                            <div class="bg-secondary rounded d-flex align-items-center justify-content-center text-white" style="width: 50px; height: 50px;">
+                                <i class="bi bi-image"></i>
+                            </div>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <h6 class="mb-0">{{ item.menu.name }}</h6>
+                        <small class="text-muted">{{ item.menu.food_category|title }}</small>
+                    </td>
+                    <td>${{ item.menu.price }}</td>
+                    <td class="text-center">{{ item.quantity }}</td>
+                    <td class="text-end fw-bold">${{ item.total_price }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot class="border-top">
+                <tr class="fs-5">
+                    <td colspan="4" class="text-end border-0 text-primary"><strong>Grand Total</strong></td>
+                    <td class="text-end border-0 text-primary"><strong>${{ order_item.0.order.total_amount }}</strong></td>
+                </tr>
+            </tfoot>
+        </table>
+        
+        <div class="row mt-4 pt-3 border-top bg-light rounded-3 p-3 mx-0">
+            <div class="col-md-6 mb-3 mb-md-0">
+                <div class="d-flex align-items-center">
+                    <div>
+                        <h6 class="mb-0 text-secondary text-uppercase" style="font-size: 0.75rem; letter-spacing: 1px;">Wait Staff</h6>
+                        <p class="mb-0 fw-bold">
+                            {% if order_det.waiter %}
+                                {{ order_det.waiter.name }}
+                            {% else %}
+                                <span class="text-muted fst-italic">Not Assigned</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="d-flex align-items-center justify-content-md-end">
+                    
+                    <div>
+                        <h6 class="mb-0 text-secondary text-uppercase" style="font-size: 0.75rem; letter-spacing: 1px;">Kitchen Staff</h6>
+                        <p class="mb-0 fw-bold">
+                            {% if order_det.kitchen_staff %}
+                                {{ order_det.kitchen_staff.name }}
+                            {% else %}
+                                <span class="text-muted fst-italic">Not Assigned</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="d-flex flex-column align-items-center justify-content-center py-5">
+    <div class="bg-light rounded-circle p-4 mb-3">
+        <i class="bi bi-basket3 text-secondary" style="font-size: 2rem;"></i>
+    </div>
+    <h5 class="text-secondary">No items found for this order.</h5>
+</div>
+{% endif %}

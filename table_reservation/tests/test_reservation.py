@@ -133,7 +133,6 @@ class ReservationTest(TestCase):
             waiter=self.waiter_user,
             assigned=True
         )
-
         url = reverse('table_reservation:table_unassign')
         data = {'pk': res.pk}
         response = self.client.post(url, data)

@@ -257,6 +257,17 @@ argon2 = ["argon2-cffi (>=19.1.0)"]
 bcrypt = ["bcrypt"]
 
 [[package]]
+name = "django-ajax-datatable"
+version = "4.5.0"
+description = "Helper class to integrate Django with datatables"
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "django_ajax_datatable-4.5.0-py2.py3-none-any.whl", hash = "sha256:99233042e6c7d03ed730ea13b4dba1c3e8a66dd1f57022a07b29acb8812ad6f1"},
+]
+
+[[package]]
 name = "django-celery-beat"
 version = "2.8.1"
 description = "Database-backed Periodic Tasks."
@@ -713,4 +724,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<3.13"
-content-hash = "416c910efd3ea4a20ddb92d615164c2cd6ce54983d7fc96aacc3b96d44cc861b"
+content-hash = "8d9cd99ea5b0add5e8d9f4d61aac8042c696557c53b0459b46ea614075d869e9"
