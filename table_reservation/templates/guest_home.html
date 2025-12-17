@@ -242,8 +242,7 @@
                     },
                     success:function(data){
                         if (data.success){
-                            $('#book_tables').modal('hide');
-                            $('#book_tables_body').html(data.message);
+                            $('#book_tables .btn-close').click();
                             
                             const Toast = Swal.mixin({
                                 toast: true,
@@ -260,9 +259,15 @@
                             Toast.fire({
                                 icon: 'success',
                                 title: data.message
+                            }).then(() => {
+                                location.reload();
                             });
                         }else{
-                            $('#book_tables_body').html(data.message);
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: data.message
+                            });
                         }
                     },
                     error:function(xhr){

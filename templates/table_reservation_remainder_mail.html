@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reservation Reminder</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f4f6f8;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            color: #333333;
+            line-height: 1.6;
+        }
+        .email-wrapper {
+            width: 100%;
+            background-color: #f4f6f8;
+            padding: 40px 0;
+        }
+        .email-content {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.08); /* Soft/Premium Shadow */
+            overflow: hidden;
+        }
+        .email-header {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%); /* Premium Emerald Gradient */
+            padding: 30px 20px;
+            text-align: center;
+        }
+        .email-header h1 {
+            color: #ffffff;
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        .email-body {
+            padding: 30px 40px;
+        }
+        .greeting {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #1f2937;
+        }
+        .message {
+            margin-bottom: 25px;
+            color: #4b5563;
+        }
+        .info-card {
+            background-color: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-left: 4px solid #10b981;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        .info-row {
+            display: flex; /* Flexbox support varies in email clients, tables prefered for layout consistency but using updated styling here */
+            margin-bottom: 12px;
+            align-items: baseline;
+        }
+        
+        .info-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #374151;
+            min-width: 140px; /* alignment assistance */
+            display: inline-block;
+        }
+
+        .info-value {
+            color: #111827;
+            font-weight: 500;
+        }
+        .waiter-section {
+            background-color: #ecfdf5; /* Light emerald tint */
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .waiter-title {
+            color: #047857;
+            font-size: 14px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .waiter-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #065f46;
+            margin: 5px 0;
+        }
+
+        .waiter-phone {
+            font-size: 14px;
+            color: #059669;
+        }
+        .cta-button {
+            display: block;
+            width: 200px;
+            margin: 30px auto 0;
+            padding: 14px 0;
+            background-color: #10b981;
+            color: #ffffff;
+            text-align: center;
+            text-decoration: none;
+            font-weight: 600;
+            border-radius: 50px; /* Pill shape */
+            transition: background-color 0.3s ease;
+        }
+        
+        .cta-button:hover {
+            background-color: #059669;
+        }
+        .email-footer {
+            background-color: #f9fafb;
+            padding: 20px;
+            text-align: center;
+            font-size: 13px;
+            color: #9ca3af;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .email-footer p {
+            margin: 5px 0;
+        }
+    </style>
+
+</head>
+<body>
+    <div class="email-wrapper">
+        <div class="email-content">
+            <div class="email-header">
+                <h1>Gentle Reminder</h1>
+            </div>
+            <div class="email-body">
+                <div class="greeting">Hello {{ user.name|default:"Guest" }},</div>
+                
+                <p class="message">
+                    We are excited to welcome you soon! This is a gentle reminder that your reservation is scheduled to begin in just <strong>one hour</strong>.
+                </p>
+
+                <div class="info-card">
+                    <div style="margin-bottom: 10px;">
+                        <span class="info-label">📅 Date:</span>
+                        <span class="info-value">{{ reservation.time_schedule }}</span>
+                    </div>
+                    <div style="margin-bottom: 10px;">
+                        <span class="info-label">⏰ Time:</span>
+                        <span class="info-value">{{ reservation.start_time }}</span>
+                    </div>
+                    <div style="margin-bottom: 10px;">
+                        <span class="info-label">🍽 Table No:</span>
+                        <span class="info-value">{{ reservation.table.table_no }}</span>
+                    </div>
+                    <div>
+                        <span class="info-label">👥 Guests:</span>
+                        <span class="info-value">{{ reservation.seat }} People</span>
+                    </div>
+                </div>
+
+                <!-- Waiter Assignment -->
+                <div class="waiter-section">
+                    <span class="waiter-title">Your Assigned Waiter</span>
+                    <div class="waiter-name">{{ waiter|title }}</div>
+                    {% if waiter_phone != 'unassigned' %}
+                    <div class="waiter-phone">
+                        📞 {{ waiter_phone }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="email-footer">
+                <p>We look forward to serving you an exceptional dining experience.</p>
+                <p>&copy; {% now "Y" %} Hotel Management System. All rights reserved.</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

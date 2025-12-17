@@ -19,7 +19,7 @@ from datetime import timedelta,datetime
 from django.utils import timezone
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Exists, OuterRef,Subquery
-from table_reservation.tasks import table_reservation_guest
+from table_reservation.tasks import table_reservation_guest,remainder_before_one_hour
 
 
 @login_required(login_url='/accounts/login/')
@@ -77,9 +77,10 @@ def TableReserverView(request):
             try:
                 table_no = available_tab.first()
                 created = TableReservation.objects.create(user=request.user,table=table_no,seat=seat,duration=duration,time_schedule=current_time_schedule,start_time=current_start_time,end_time=current_end_time)
-                table_no.availabe=False
+                table_no.available=False
                 table_no.save()
                 print(created)
+                table_reservation_guest.delay(created.id)
                 return JsonResponse({'success':True,'message':'Table Reserved Successfully'})
             except Exception as e:
                 return JsonResponse({'success':False,'message':str(e)})
