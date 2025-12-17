@@ -205,15 +205,15 @@
                 
             }); 
                 $(document).on('click', '.delete-table-reservation', function () {
-            var pk = $(this).data('pk');
-            Swal.fire({
-                title: 'Are you sure?',
-                text: "The table will be deleted!",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonText: 'Yes, delete it!',
-                cancelButtonText: 'No'
-            }).then((result) => {
+                var pk = $(this).data('pk');
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: "The table will be deleted!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Yes, delete it!',
+                    cancelButtonText: 'No'
+                }).then((result) => {
             if (result.isConfirmed) {
                 $.ajax({
                     url: `/table_reservation/table_delete/`,
