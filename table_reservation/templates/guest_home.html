@@ -52,87 +52,119 @@
         </div>
         {% endif %}
     </div>
-
-    <div id="table-list" class="mb-5">
-        <h2 class="border-bottom pb-2 mb-4"><i class="bi bi-aspect-ratio me-2"></i>Tables</h2>
-        <button type="button" class="book-table btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#book_tables">
-            <i class="bi bi-bag-plus-fill"></i> Book Table
+    <div id="reservations-section" class="mb-5">
+        <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-2">
+            <h2 class="mb-0"><i class="bi bi-calendar-check me-2"></i>Your Reservations</h2>
+            <button type="button" class="book-table btn btn-primary rounded-pill px-4 shadow-sm" data-bs-toggle="modal" data-bs-target="#book_tables">
+                <i class="bi bi-plus-lg me-1"></i>Book New Table
             </button>
-        {% if tables %}
-        <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-4">
-            {% for i in tables %}
+        </div>
+        <h4 class="text-secondary fw-bold mb-3">Live / Upcoming</h4>
+        {% if upcoming_reservations %}
+        <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-4 mb-5">
+            {% for i in upcoming_reservations %}
             <div class="col">
-                <div class="card h-100 shadow-sm text-center border-0 table-card {% if i.available %}available-card{% else %}unavailable-card{% endif %}">
-                    <div class="card-body">
-                        <div class="status-badge mb-3">
-                            {%if tables_assigned and tables_assigned.tabereservation.id == i.id and tables_assigned.assigned%}
-                                <span class="badge bg-success bg-opacity-25 text-success rounded-pill"><i class="bi bi-check-circle me-1"></i>Assigned</span>
-                            {%elif tables_assigned and tables_assigned.tabereservation.id == i.id and tables_assigned.completed%}
-                                <span class="badge bg-secondary bg-opacity-25 text-secondary rounded-pill"><i class="bi bi-x-circle me-1"></i>Completed</span>
-                            {%else%}
-                                <span class="badge bg-warning bg-opacity-25 text-warning rounded-pill"><i class="bi bi-hourglass me-1"></i>Pending</span>
+                <div class="card h-100 shadow-lg border-0 rounded-4 overflow-hidden position-relative">
+                    <div class="card-header bg-primary text-white border-0 py-3 text-center">
+                        <h5 class="mb-0 fw-bold">Table #{{ i.table.table_no }}</h5>
+                    </div>
+                    <div class="card-body text-center p-4">
+                        <div class="mb-3">
+                            {% if i.assigned %}
+                                <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-2 border border-success border-opacity-25">
+                                    Assigned
+                                </span>
+                            {% else %}
+                                <span class="badge bg-warning bg-opacity-10 text-warning rounded-pill px-3 py-2 border border-warning border-opacity-25">
+                                    <i class="bi bi-hourglass-split me-1"></i>Pending
+                                </span>
                             {% endif %}
                         </div>
 
-                        <div class="icon-wrapper mb-3 mx-auto text-primary bg-primary bg-opacity-10 p-3 rounded-circle" style="width: fit-content;">
-                            <i class="bi bi-table display-6"></i>
-                        </div>
-                        <h5 class="card-title fw-bold">Table #{{ i.table.table_no }}</h5>
-                        
-                        <div class="row g-2 mb-3 mt-3">
-                            <div class="col-6">
-                                <div class="p-2 border rounded bg-light">
-                                    <small class="d-block text-muted">Floor</small>
-                                    <span class="fw-bold">{{ i.table.floor_no }}</span>
-                                </div>
+                        <div class="row g-2 mb-4 text-start">
+                             <div class="col-6">
+                                <small class="text-muted d-block text-uppercase" style="font-size: 0.65rem; letter-spacing: 0.5px;">Date</small>
+                                <span class="fw-bold text-dark">{{ i.time_schedule|date:"M d" }}</span>
                             </div>
                             <div class="col-6">
-                                <div class="p-2 border rounded bg-light">
-                                    <small class="d-block text-muted">Capacity</small>
-                                    <span class="fw-bold">{{ i.table.capacity }}</span>
+                                <small class="text-muted d-block text-uppercase" style="font-size: 0.65rem; letter-spacing: 0.5px;">Time</small>
+                                <span class="fw-bold text-dark">{{ i.start_time|time:"H:i" }}</span>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted d-block text-uppercase" style="font-size: 0.65rem; letter-spacing: 0.5px;">Floor</small>
+                                <div class="fw-bold text-dark">{{ i.table.floor_no }}</div>
+                            </div>
+                             <div class="col-6">
+                                <small class="text-muted d-block text-uppercase" style="font-size: 0.65rem; letter-spacing: 0.5px;">Seats</small>
+                                <div class="fw-bold text-dark">{{ i.table.capacity }}</div>
+                            </div>
+                        </div>
+                        
+                        {% if i.assigned and i.waiter_name %}
+                        <div class="bg-light rounded-3 p-3 text-start border shadow-sm">
+                            <div class="d-flex align-items-center">
+                                <div class="overflow-hidden">
+                                    <div class="fw-bold text-dark text-truncate">{{ i.waiter_name }}</div>
+                                    {% if i.waiter_phone %}
+                                    <div class="small text-muted text-truncate"><i class="bi bi-telephone-fill me-1" style="font-size:0.75rem;"></i>{{ i.waiter_phone }}</div>
+                                    {% endif %}
                                 </div>
                             </div>
                         </div>
-
-                        <hr>
-                        
-                        <div class="text-start mb-3">
-                            <h6 class="text-muted text-uppercase small fw-bold mb-2">Schedule Details</h6>
-                            <ul class="list-unstyled mb-0 small">
-                                <li class="mb-2 d-flex align-items-center">
-                                    <i class="bi bi-calendar-event me-2 text-primary"></i>
-                                    <span class="fw-medium">{{ i.time_schedule }}</span>
-                                </li>
-                                <li class="mb-2 d-flex align-items-center">
-                                    <i class="bi bi-clock me-2 text-primary"></i>
-                                    <span>{{ i.start_time }} - {{ i.end_time }}</span>
-                                </li>
-                                <li class="d-flex align-items-center">
-                                    <i class="bi bi-hourglass-split me-2 text-primary"></i>
-                                    <span>{{ i.duration }}</span>
-                                </li>
-                            </ul>
-                        </div>
-
-                        {%if tables_assigned and tables_assigned.tabereservation.id == i.id and tables_assigned.assigned %}
-                        <div class="waiter-info p-3 bg-primary bg-opacity-10 rounded text-start">
-                            <h6 class="text-primary text-uppercase small fw-bold mb-2"><i class="bi bi-person-badge me-1"></i>Assigned Waiter</h6>
-                            <div class="small">
-                                <div class="fw-bold mb-1">{{ tables_assigned.waiter.name }}</div>
-                                <div class="mb-1"><i class="bi bi-telephone me-1"></i>{{ tables_assigned.waiter.phone_no }}</div>
-                                <div class="mb-1"><i class="bi bi-envelope me-1"></i>{{ tables_assigned.waiter.email }}</div>
-                            </div>
+                        {% else %}
+                        <div class="alert alert-light border border-dashed text-muted small mb-0">
+                            <i class="bi bi-info-circle me-1"></i> Waiter will be assigned shortly.
                         </div>
                         {% endif %}
+                        <button class="delete-table-reservation btn btn-outline-danger text-danger mt-2 btn-sm rounded-pill px-3"
+                            data-pk="{{ i.pk }}">
+                        <i class="bi bi-trash-fill me-1"></i> Delete
+                        </button>
+
                     </div>
                 </div>
             </div>
-        {% endfor %}
-
+            {% endfor %}
         </div>
         {% else %}
-        <div class="alert alert-info" role="alert">
-            No tables set up yet.
+        <div class="text-center py-5 bg-light rounded-4 border border-dashed mb-5">
+            <i class="bi bi-calendar-x text-muted display-4 mb-3"></i>
+            <p class="text-muted">No upcoming reservations found.</p>
+        </div>
+        {% endif %}
+
+        <!-- Past Reservations -->
+        <h4 class="text-muted fw-bold mb-3"><i class="bi bi-clock-history me-2"></i>Past History</h4>
+        {% if past_reservations %}
+        <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-4">
+            {% for i in past_reservations %}
+            <div class="col">
+                <div class="card h-100 shadow-sm border-0 rounded-4 opacity-75 grayscale-content">
+                    <div class="card-body">
+                         <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="card-title fw-bold mb-0 text-muted">Table #{{ i.table.table_no }}</h6>
+                            <span class="badge bg-secondary rounded-pill">Completed</span>
+                        </div>
+                         <div class="small text-muted mb-2">
+                            <i class="bi bi-calendar me-1"></i> {{ i.time_schedule|date:"M d, Y" }}
+                         </div>
+                         <div class="small text-muted mb-3">
+                             <i class="bi bi-clock me-1"></i> {{ i.start_time|time:"H:i" }} - {{ i.end_time|time:"H:i" }}
+                         </div>
+                         
+                         {% if i.waiter_name %}
+                         <div class="small text-muted border-top pt-2 mt-2">
+                            Served by: <span class="fw-bold">{{ i.waiter_name }}</span>
+                         </div>
+                         {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-4 bg-light rounded-3">
+            <p class="text-muted mb-0">No past reservation history.</p>
         </div>
         {% endif %}
     </div>
@@ -171,54 +203,44 @@
                 $('#book_tables_body').load('/table_reservation/table_book_form/');
 
                 
-
             }); 
-            $(document).on('click','.cart-items',function(){
+                $(document).on('click', '.delete-table-reservation', function () {
+            var pk = $(this).data('pk');
+            Swal.fire({
+                title: 'Are you sure?',
+                text: "The table will be deleted!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, delete it!',
+                cancelButtonText: 'No'
+            }).then((result) => {
+            if (result.isConfirmed) {
                 $.ajax({
-                    url:"{% url 'orders:cart-create' %}",
-                    type:'GET',
-                    success:function(response){
-                        $("#cartOffcanvas .offcanvas-body").html(response);
-                    }
-                })
-            })
-            $(document).on('click','.add-to-cart',function(){
-                let menu_id = $(this).data('menu-id');
-                console.log("menu_id",menu_id)
-                $.ajax({
-                    url:"{% url 'orders:cart-create' %}",
-                    type:'POST',
-
-                    data:{
-                        'csrfmiddlewaretoken': '{{ csrf_token }}',
-                        'menu_id':menu_id,
-                        'quantity':1
+                    url: `/table_reservation/table_delete/`,
+                    type: 'POST',
+                    data: {
+                        pk: pk,
+                        csrfmiddlewaretoken: '{{ csrf_token }}'
                     },
-                    success:function(response){
-                        if(response.success){
-                            $('#cart_count').text(response.cart_count);
-                            $('#cart_total').text(response.cart_total);
-                            $('#cart_items').append('<div class="cart-item" data-menu_id="'+response.menu_id+'">'+response.menu_name+'</div>');
-                            const Toast = Swal.mixin({
-                                toast: true,
-                                position: 'top-end',
-                                showConfirmButton: false,
-                                timer: 1500,
-                                timerProgressBar: true,
-                                didOpen: (toast) => {
-                                    toast.addEventListener('mouseenter', Swal.stopTimer)
-                                    toast.addEventListener('mouseleave', Swal.resumeTimer)
-                                }
+                    success: function (data) {
+                        if (data.success) {
+                            Swal.fire('Deleted!', data.message, 'success').then(() => {
+                                location.reload();
                             });
-                            Toast.fire({
-                                icon: 'success',
-                                title: 'Menu added to cart successfully'
-                            });
-                            $(".cart-items").click();
+                        } else {
+                            Swal.fire('Error', data.message, 'error');
                         }
+                    },
+                    error: function () {
+                        Swal.fire('Error', 'Something went wrong with the request', 'error');
                     }
+
                 })
-            })
+            }
+        })
+    })
+
+
             $(document).on('submit','#table_book_form',function(e){
                 e.preventDefault();
                 console.log('form submitted');
@@ -231,8 +253,7 @@
                     },
                     success:function(data){
                         if (data.success){
-                            $('#book_tables').modal('hide');
-                            $('#book_tables_body').html(data.message);
+                            $('#book_tables .btn-close').click();
                             
                             const Toast = Swal.mixin({
                                 toast: true,
@@ -249,14 +270,32 @@
                             Toast.fire({
                                 icon: 'success',
                                 title: data.message
+                            }).then(() => {
+                                location.reload();
                             });
                         }else{
-                            $('#book_tables_body').html(data.message);
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: data.message
+                            });
                         }
                     },
-                    error: function(data){
-                        $('#book_tables_body').html('<div class="text-center"><i class="fa fa-spinner fa-spin"></i></div>');
-                    } 
+                    error:function(xhr){
+                    if (xhr.status === 400) {
+                        let errors = xhr.responseJSON.errors;
+                        let errorHtml = '<ul style="color:red; text-align:left;">';
+                        for (let field in errors) {
+                            errorHtml += `<li>${errors[field][0]}</li>`;
+                        }
+                        errorHtml += '</ul>';
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Validation Error',
+                            html: errorHtml
+                        });
+                    }
+                }
                 })
             })
         });

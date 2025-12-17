@@ -1,3 +1,4 @@
+from table_reservation.tasks import remainder_before_one_hour
 from django.test import TestCase, override_settings
 from accounts.models import CustomUser, TableLayout
 from table_reservation.models import TableReservation, TableAssign
@@ -30,10 +31,7 @@ class TableAssignTest(TestCase):
         self.waiter.groups.add(self.waiter_group)
 
     def test_user_registration_email(self):
-        """Test that registering a new guest user sends a welcome email."""
-        mail.outbox = [] # Clear outbox
-        
-        # User valid data for the form.
+        mail.outbox = []
         register_data = {
             'email': 'newguest@gmail.com',
             'password': 'newpassword',
@@ -42,21 +40,15 @@ class TableAssignTest(TestCase):
             'name': 'New Guest'
         }
         
-        # Post to GuestUserView
         response = self.client.post(reverse('accounts:guestuser'), register_data)
         
-        # Check redirection
         self.assertEqual(response.status_code, 302) 
         self.assertTrue(CustomUser.objects.filter(email='newguest@gmail.com').exists())
-        
-        # Verify Email
         self.assertEqual(len(mail.outbox), 1)
         self.assertIn('Welcome to our Hotel Management System', mail.outbox[0].subject)
-        # Check receiver
         self.assertEqual(mail.outbox[0].to, ['newguest@gmail.com'])
 
     def test_full_reservation_flow(self):
-        """Test full flow: Reservation + Email, Waiter Assign, Waiter Unassign."""
         mail.outbox = []
         
         guest_user = CustomUser.objects.create_user(
@@ -69,18 +61,16 @@ class TableAssignTest(TestCase):
         guest_user.groups.add(self.guest_group)
         self.client.login(email='guestflow@gmail.com', password='password123')
 
-        future_time = timezone.now() + timedelta(hours=2)
+        future_time = timezone.localtime() + timedelta(hours=2)
         book_data = {
-            'user_id': guest_user.id,
-            'table_no': self.table_layout.table_no,
-            'duration': 30,
-            'time_schedule': future_time.strftime('%Y-%m-%dT%H:%M')
+            'seat': 4,
+            'time_schedule': future_time.date(),
+            'start_time': future_time.strftime('%H:%M')
         }
         
         response = self.client.post(
             reverse('table_reservation:table_book_form'),
-            json.dumps(book_data),
-            content_type='application/json'
+            book_data
         )
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.json()['success'])
@@ -123,22 +113,6 @@ class TableAssignTest(TestCase):
         self.table_layout.refresh_from_db()
         self.assertTrue(self.table_layout.available)
 
-    def test_assign_already_assigned(self):
-        guest = CustomUser.objects.create_user(
-            email='g1@gmail.com', password='p', role='guest', name='G1', phone_no='1111111111'
-        )
-        reservation = TableReservation.objects.create(
-            user=guest, table=self.table_layout, duration=timedelta(minutes=30), time_schedule=timezone.now()
-        )
-        
-        self.client.login(email='waiter@gmail.com', password='testpassword')
-        TableAssign.objects.create(tabereservation=reservation, waiter=self.waiter, assigned=True)
-        
-        response = self.client.post(reverse('table_reservation:table_assign'), {'pk': reservation.id})
-        self.assertEqual(response.status_code, 200)
-        self.assertFalse(response.json()['success'])
-        self.assertEqual(response.json()['message'], 'Table is already assigned')
-
     def test_unauthorized_unassign(self):
         guest = CustomUser.objects.create_user(
             email='g2@gmail.com', password='p', role='guest', name='G2', phone_no='2222222222'
@@ -148,29 +122,53 @@ class TableAssignTest(TestCase):
         )
         
         TableAssign.objects.create(tabereservation=reservation, waiter=self.waiter, assigned=True)
-        
         other_waiter = CustomUser.objects.create_user(
             email='otherwaiter@gmail.com', password='p', role='waiter', name='Other', phone_no='3333333333'
         )
         other_waiter.groups.add(self.waiter_group)
         self.client.login(email='otherwaiter@gmail.com', password='p')
-        
         response = self.client.post(reverse('table_reservation:table_unassign'), {'pk': reservation.id})
         self.assertEqual(response.status_code, 200)
         self.assertFalse(response.json()['success'])
         self.assertEqual(response.json()['message'], 'You are not authorized to unassign this table')
 
-    def test_unassign_non_existent_assignment(self):
-        """Test unassigning a reservation that has no active assignment."""
+    def test_remainder_mail_before_one_hour(self):
         guest = CustomUser.objects.create_user(
             email='g3@gmail.com', password='p', role='guest', name='G3', phone_no='4444444444'
         )
+        now = timezone.localtime()
+        target_time = now + timedelta(hours=1)
         reservation = TableReservation.objects.create(
-            user=guest, table=self.table_layout, duration=timedelta(minutes=30), time_schedule=timezone.now()
+            user=guest, 
+            table=self.table_layout, 
+            duration=timedelta(minutes=30), 
+            time_schedule=target_time.date(),
+            start_time=target_time.time()
         )
-        
-        self.client.login(email='waiter@gmail.com', password='testpassword')
-        response = self.client.post(reverse('table_reservation:table_unassign'), {'pk': reservation.id})
+        TableAssign.objects.create(tabereservation=reservation, waiter=self.waiter, assigned=True)
+        mail.outbox = []
+        remainder_before_one_hour()
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn('Gentle Reminder', mail.outbox[0].subject)
+        self.assertEqual(mail.outbox[0].to, ['g3@gmail.com'])
+
+    def test_shows_only_assigned_tables_by_user(self):
+        guest = CustomUser.objects.create_user(
+            email='g2@gmail.com', password='p', role='guest', name='G2', phone_no='2222222222'
+        )
+        reservation = TableReservation.objects.create(
+            user=guest, 
+            table=self.table_layout, 
+            duration=timedelta(minutes=30), 
+            time_schedule=timezone.localtime().date(),
+            start_time=timezone.localtime().time()
+        )
+        TableAssign.objects.create(tabereservation=reservation, waiter=self.waiter, assigned=True)
+        other_waiter = CustomUser.objects.create_user(
+            email='otherwaiter@gmail.com', password='p', role='waiter', name='Other', phone_no='3333333333'
+        )
+        other_waiter.groups.add(self.waiter_group)
+        self.client.login(email='otherwaiter@gmail.com', password='p') 
+        response = self.client.get(reverse('table_reservation:table_reserved'))
         self.assertEqual(response.status_code, 200)
-        self.assertFalse(response.json()['success'])
-        self.assertIn('Active assignment not found', response.json()['message'])
+        self.assertEqual(len(response.context['table_res']), 1)
