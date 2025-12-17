@@ -39,13 +39,15 @@ class TableReservationForm(forms.ModelForm):
             return st_time
 
         now = timezone.now()
-        selected_dt = timezone.make_aware(
-            datetime.combine(time_sch, st_time)
-        )
+        
+        booking_dt = datetime.combine(time_sch, st_time)
+        if timezone.is_naive(booking_dt):
+            booking_dt = timezone.make_aware(booking_dt, timezone.get_current_timezone())
 
-        if selected_dt < now:
+        if booking_dt < now:
             raise forms.ValidationError("You can't book a table in the past.")
-
-
-
+        
+        if booking_dt < now + timedelta(hours=1):
+            raise forms.ValidationError("You must book at least 1 hour in advance.")
+            
         return st_time

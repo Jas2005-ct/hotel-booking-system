@@ -1,6 +1,7 @@
 {%extends 'base.html'%}
 {%block title%}{{user.role|title}}{%endblock%}
 {%block content%}
+    {%if user.role == 'waiter' %}
        <div class="col py-3">
             <div id="table-list-upcoming" class="mb-5">
                 <h2 class="border-bottom pb-2 mb-4"><i class="bi bi-calendar-event me-2"></i>Upcoming / Active Reservations</h2>
@@ -85,17 +86,19 @@
                                  </span>
                             </div>
 
-                            {%if request.user.role == 'waiter' and not i.assigned and not i.completed%}
+                            {%if request.user.role == 'waiter' and not i.assigned and not i.completed %}
                             <button type="button" class="take-table btn btn-primary mt-2" data-pk="{{i.pk}}">
                                 <i class="bi bi-bag-plus-fill"></i> Take Order
                             </button>
                             {%endif%}
                             
-                            {%if request.user.role == 'waiter' and i.assigned and not i.completed%}
-                            <button type="button" class="table-unassign btn btn-primary mt-2" data-pk="{{i.pk}}">
-                                <i class="bi bi-bag-plus-fill"></i> Checkout / Unassign
-                            </button>
-                            {%endif%}
+                            {%if request.user.role == 'waiter' and i.assigned and not i.completed %}
+                                {%if i.waiter_id == request.user.id %}
+                                    <button type="button" class="table-unassign btn btn-primary mt-2" data-pk="{{i.pk}}">
+                                        <i class="bi bi-bag-plus-fill"></i> Checkout / Unassign
+                                    </button>
+                                {%endif%}    
+                            {% endif %}
                         </div>
                     </div>
                     {% endfor %}
@@ -106,36 +109,148 @@
                 </div>
                 {% endif %}
             </div>
+            <div class="col py-3">
+            <div id="table-list-upcoming" class="mb-5">
+                <h2 class="border-bottom pb-2 mb-4"><i class="bi bi-calendar-event me-2"></i>Completed Reservations</h2>
+                {% if past_reservations %}
+                <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-4">
+                    {% for i in past_reservations %}
+                    <div class="col">
+                        <div class="card h-100 shadow-sm text-center border-0 table-card {% if i.table.available %}available-card{% else %}unavailable-card{% endif %}">
+                            <div class="card-body">
+                                <div class="card-footer bg-transparent border-0 pb-3">
+                                    <span class="status-indicator">
+                                    {% if i.completed %}
+                                        {% if i.waiter_name == request.user.name %}
+                                            <span class="badge bg-success bg-opacity-25 text-success rounded-pill">Completed</span>
+                                        {% else %}
+                                            <span class="badge bg-primary bg-opacity-25 text-primary rounded-pill">Completed</span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="badge bg-secondary bg-opacity-25 text-secondary rounded-pill"><i class="bi bi-person-dash me-1"></i>Unassigned</span>
+                                    {% endif %}
+                                    </span>
+                                </div> 
+                                <div class="icon-wrapper mb-3 mx-auto text-primary bg-primary bg-opacity-10 p-3 rounded-circle" style="width: fit-content;">
+                                    <i class="bi bi-table display-6"></i>
+                                </div>
+                                <h5 class="card-title fw-bold">Table #{{ i.table.table_no }}</h5>
+                                
+                                <div class="row g-2 mb-3 mt-3">
+                                    <div class="col-4">
+                                        <div class="p-1 border rounded bg-light">
+                                            <small class="d-block text-muted" style="font-size: 0.7rem;">Floor</small>
+                                            <span class="fw-bold small">{{ i.table.floor_no }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="p-1 border rounded bg-light">
+                                            <small class="d-block text-muted" style="font-size: 0.7rem;">Seats</small>
+                                            <span class="fw-bold small">{{ i.table.capacity }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="text-start mb-3">
+                                    <h6 class="text-muted text-uppercase small fw-bold mb-2 border-bottom pb-1">Schedule</h6>
+                                    <div class="d-flex justify-content-between small mb-1">
+                                        <span class="text-muted"><i class="bi bi-calendar3 me-1"></i>Date:</span>
+                                        <span class="fw-medium">{{ i.time_schedule|date:"M d, Y" }}</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between small">
+                                        <span class="text-muted"><i class="bi bi-clock me-1"></i>Time:</span>
+                                        <span class="fw-medium text-primary">{{ i.start_time|time:"H:i" }}</span>
+                                    </div>
+                                </div>
 
+                                <div class="text-start mb-2">
+                                    <h6 class="text-muted text-uppercase small fw-bold mb-2 border-bottom pb-1">Guest Details</h6>
+                                    <div class="d-flex align-items-center mb-2">
+                                        <div class="bg-light rounded-circle p-2 me-2">
+                                            <i class="bi bi-person text-secondary"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold small">{{ i.user.name }}</div>
+                                            <div class="text-muted small" style="font-size: 0.75rem;">{{ i.user.phone_no }}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {% if i.waiter_name %}
+                            <div class="card-footer bg-transparent border-0 pb-2">
+                                <small class="text-muted">Waiter: {{ i.waiter_name }}</small>
+                            </div>
+                            {% endif %}
+
+                            <div class="card-footer bg-transparent border-0 pb-3">
+                                 <span class="status-indicator">
+                                    {% if i.table.available %}
+                                        <span class="badge bg-success bg-opacity-25 text-success rounded-pill"><i class="bi bi-check-circle me-1"></i>Available</span>
+                                    {% else %}
+                                        <span class="badge bg-danger bg-opacity-25 text-danger rounded-pill"><i class="bi bi-x-circle me-1"></i>Reserved</span>
+                                    {% endif %}
+                                 </span>
+                            </div>
+
+                            {%if request.user.role == 'waiter' and not i.assigned and not i.completed %}
+                            <button type="button" class="take-table btn btn-primary mt-2" data-pk="{{i.pk}}">
+                                <i class="bi bi-bag-plus-fill"></i> Take Order
+                            </button>
+                            {%endif%}
+                            
+                            {%if request.user.role == 'waiter' and i.assigned and not i.completed %}
+                                {%if i.waiter_id == request.user.id %}
+                                    <button type="button" class="table-unassign btn btn-primary mt-2" data-pk="{{i.pk}}">
+                                        <i class="bi bi-bag-plus-fill"></i> Checkout / Unassign
+                                    </button>
+                                {%endif%}    
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="alert alert-info" role="alert">
+                    No past reservations found.
+                </div>
+                {% endif %}
+            </div>
+
+            {%endif%}
             {% if user.role == 'admin' %}
             <!-- Past Reservations Section -->
             <div id="table-list-history" class="mb-5 pt-4 border-top">
                 <h2 class="border-bottom pb-2 mb-4"><i class="bi bi-clock-history me-2"></i>Reservation History</h2>
                 {% if past_reservations %}
                 <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-4">
-                    {% for i in past_reservations %}
+                    {% for i in table_res %}
                     <div class="col">
                         <div class="card h-100 shadow-sm text-center border-0 table-card bg-light">
                             <div class="card-body opacity-75">
                                 <div class="card-header bg-transparent border-0 pb-0">
-                                    <span class="badge bg-secondary">Completed / Past</span>
+                                    {% if i.completed %}
+                                     <span class="badge bg-success bg-opacity-25 text-success rounded-pill">Completed</span>
+                                    {% elif i.assigned and not i.completed %}
+                                     <span class="badge bg-primary bg-opacity-25 text-primary rounded-pill">Live</span>
+                                    {% endif %}
                                 </div>
                                 <div class="icon-wrapper mb-3 mx-auto text-muted">
                                     <i class="bi bi-journal-check display-6"></i>
                                 </div>
-                                <h5 class="card-title fw-bold text-muted">Table #{{ i.table.table_no }}</h5>
+                                <h5 class="card-title fw-bold text-muted">Table #{{ i.tabereservation.table.table_no}}</h5>
                                 <ul class="list-unstyled text-muted mb-3 small">
-                                    <li><i class="bi bi-calendar me-2"></i>{{ i.time_schedule }}</li>
+                                    <li><i class="bi bi-calendar me-2"></i>{{ i.tabereservation.time_schedule }}</li>
                                 </ul>
                                 <ul class="list-unstyled text-muted mb-3 small">
-                                    <li><i class="bi bi-calendar me-2"></i>{{ i.time_schedule }}</li>
+                                    <li><i class="bi bi-calendar me-2"></i>{{ i.tabereservation.start_time }}</li>
                                 </ul>
                                 <hr>
                                 <h6>Guest</h6>
-                                <p class="mb-0">{{ i.user.name }}</p>
+                                <p class="mb-0">{{ i.tabereservation.user.name }}</p>
                                 <hr>
                                 <h6>Assigned Waiter</h6>
-                                <p class="mb-0">{% if i.waiter_name %}{{ i.waiter_name }}{% else %}Not Assigned{% endif %}</p>
+                                <p class="mb-0">{% if i.waiter %}{{ i.waiter.name }}{% else %}Not Assigned{% endif %}</p>
                             </div>
                         </div>
                     </div>
@@ -195,10 +310,11 @@
                     }
                 },
                 error: function(response){
+                    let msg = (response.responseJSON && response.responseJSON.message) ? response.responseJSON.message : 'An error occurred';
                     Swal.fire({
                         icon: 'error',
                         title: 'Error',
-                        text: 'An error occurred'
+                        text: msg
                     });
                 }
             })

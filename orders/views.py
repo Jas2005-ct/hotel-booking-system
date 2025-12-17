@@ -104,7 +104,7 @@ class OrderCreateView(LoginRequiredMixin,UserPassesTestMixin,View):
             except Exception as e:
                 print('here')
                 return JsonResponse({'success': False, 'message': str(e)})
-            print("order successfullyy placed")
+            # print("order successfullyy placed")
             return JsonResponse({'success': True, 'message': 'Order created successfully'})
         except Cart_Items.DoesNotExist:
             print('cart here')
@@ -120,7 +120,7 @@ class OrderCreateView(LoginRequiredMixin,UserPassesTestMixin,View):
 class OrderListView(LoginRequiredMixin,View): 
     def get(self,request):
         user = request.user
-        print(user.id)
+        # print(user.id)
         if user.role == 'guest':
             try:
                 cart_user = Cart_User.objects.get(user=user)
@@ -131,7 +131,7 @@ class OrderListView(LoginRequiredMixin,View):
                 tot = 0
                 for i in orders:
                     tot += i.total_amount
-                print(tot)
+                # print(tot)
             except Exception as e:
                 return JsonResponse({'success': False, 'message': str(e)})
         elif user.role == 'waiter':
@@ -140,7 +140,7 @@ class OrderListView(LoginRequiredMixin,View):
                 tot = 0
                 for i in orders:
                     tot += i.total_amount
-                print(tot)
+                # print(tot)
             except Exception as e:
                 return JsonResponse({'success': False, 'message': str(e)})
         return render(request,'order_list.html',{'orders':orders})
@@ -153,15 +153,12 @@ class KitchenStaffView(LoginRequiredMixin,UserPassesTestMixin,View):
         user = request.user
         orders = order.objects.filter(pickup_time__gte=current_time).prefetch_related(Prefetch('order_items',queryset=order_items.objects.select_related('menu'))).order_by('-pickup_time')
         order_taken = order_kitchen_staff.objects.filter(kitchen_staff=user).select_related('order').order_by('-order__pickup_time')
-        for i in orders:
-            for j in i.order_items.all():
-                print(j.menu.name)
         return render(request,'kitchen_staff.html',{'orders':orders,'order_taken':order_taken})
     
     def post(self,request):
         user = request.user
         order_id = request.POST.get('order_id')
-        try:
+        try:     
             orders = order.objects.get(id=order_id)
         except order.DoesNotExist:
             return JsonResponse({'success': False, 'message': 'Order not found'})
@@ -170,7 +167,7 @@ class KitchenStaffView(LoginRequiredMixin,UserPassesTestMixin,View):
             orders.kitchen_staff = user
             orders.status = 'ready'
             orders.save()
-            print(f'order created to kitchen')
+            # print(f'order created to kitchen')
         except Exception as e:
             print(e)
             return JsonResponse({'success': False, 'message': 'Order not found'})
@@ -181,7 +178,7 @@ class ServiceStaffView(LoginRequiredMixin,UserPassesTestMixin,View):
         return self.request.user.role == 'waiter'
     def post(self,request):
         id = request.POST.get('id')
-        print(id)
+        # print(id)
         orders = order.objects.get(id=id)
         orders.status = 'completed'
         orders.waiter = request.user

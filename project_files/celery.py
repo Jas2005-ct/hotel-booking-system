@@ -11,6 +11,14 @@ app.conf.enable_utc = False
 app.conf.update(
     timezone = 'Asia/Kolkata'
 )
+
+app.conf.beat_schedule = {
+    'send-reminder-emails': {
+        'task': 'table_reservation.tasks.remainder_before_one_hour',
+        'schedule': crontab(minute='*'),
+    },
+}
+
 app.config_from_object(settings,namespace='CELERY')
 app.autodiscover_tasks()
 

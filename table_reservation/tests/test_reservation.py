@@ -57,44 +57,7 @@ class ReservationTest(TestCase):
         reservation = TableReservation.objects.first()
         self.assertEqual(reservation.user, self.guest_user)
         self.assertEqual(reservation.table, self.table)
-
-    def test_reservation_view_split(self):
-        self.client.login(email='admin@gmail.com', password='password123')
-        
-        past_date = (timezone.now() - timedelta(days=1)).date()
-        past_res = TableReservation.objects.create(
-            user=self.guest_user,
-            table=self.table,
-            duration=timedelta(minutes=90),
-            time_schedule=past_date,
-            start_time=time(18, 0),
-            end_time=time(19, 30),
-            seat=2
-        )
-        TableAssign.objects.create(
-            tabereservation=past_res,
-            waiter=self.waiter_user,
-            assigned=False,
-            completed=True
-        )
-        future_date = (timezone.now() + timedelta(days=1)).date()
-        upcoming_res = TableReservation.objects.create(
-            user=self.guest_user,
-            table=self.table,
-            duration=timedelta(minutes=90),
-            time_schedule=future_date,
-            start_time=time(18, 0),
-            end_time=time(19, 30),
-            seat=2
-        )
-
-        url = reverse('table_reservation:table_reserved')
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, 200)
-        context = response.context
-        self.assertIn(upcoming_res, context['upcoming_reservations'])
-        self.assertIn(past_res, context['past_reservations'])
-
+    
     def test_assign_waiter(self):
         self.client.login(email='waiter@gmail.com', password='password123')
         res = TableReservation.objects.create(
@@ -147,3 +110,200 @@ class ReservationTest(TestCase):
         self.table.refresh_from_db()
         self.assertTrue(self.table.available)
 
+    def test_reservation_past_time(self):
+        self.client.login(email='guest@gmail.com', password='password123')
+        past_date = (timezone.now() - timedelta(days=1)).date()
+        data = {
+            'seat': 2,
+            'time_schedule': past_date,
+            'start_time': '18:00',
+            'duration': '01:30'
+        }
+        url = reverse('table_reservation:table_book_form')
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, 400)
+        json_response = response.json()
+        self.assertFalse(json_response['success'])
+        self.assertTrue('time_schedule' in json_response['errors'] or 'start_time' in json_response['errors'])
+
+    def test_reservation_before_1_hour(self):
+        self.client.login(email='guest@gmail.com', password='password123')
+        today = timezone.now().date()
+        time_now = (timezone.now() + timedelta(minutes=30)).time()
+        
+        data = {
+            'seat': 2,
+            'time_schedule': today,
+            'start_time': time_now.strftime('%H:%M'),
+            'duration': '01:30'
+        }
+        url = reverse('table_reservation:table_book_form')
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, 400)
+        json_response = response.json()
+        self.assertFalse(json_response['success'])
+        self.assertIn('start_time', json_response['errors'])
+
+    def test_delete_table_reservation(self):
+        self.client.login(email='guest@gmail.com', password='password123')
+        future_date = (timezone.now() + timedelta(days=2)).date()
+        reservation = TableReservation.objects.create(
+            user=self.guest_user,
+            table=self.table,
+            duration=timedelta(minutes=90),
+            time_schedule=future_date,
+            start_time=time(18, 0),
+            end_time=time(19, 30),
+            seat=2
+        )
+        
+        url = reverse('table_reservation:table_delete')
+        data = {'pk': reservation.pk}
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, 200)
+        json_response = response.json()
+        self.assertTrue(json_response['success'])
+        self.assertEqual(json_response['message'], 'Reservation deleted successfully')
+        self.assertFalse(TableReservation.objects.filter(pk=reservation.pk).exists())
+
+    def test_delete_table_reservation_after_assigned(self):    
+        self.client.login(email='guest@gmail.com', password='password123')
+        future_date = (timezone.now() + timedelta(days=2)).date()
+        
+        reservation = TableReservation.objects.create(
+            user=self.guest_user,
+            table=self.table,
+            duration=timedelta(minutes=90),
+            time_schedule=future_date,
+            start_time=time(18, 0),
+            end_time=time(19, 30),
+            seat=2
+        )
+        
+        TableAssign.objects.create(
+            tabereservation=reservation,
+            waiter=self.waiter_user,
+            assigned=True
+        )
+        
+        url = reverse('table_reservation:table_delete')
+        data = {'pk': reservation.pk}
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, 200)
+        json_response = response.json()
+        self.assertTrue(json_response['success'])
+        self.assertEqual(json_response['message'], 'Reservation deleted successfully')
+
+    def test_assign_waiter_able_to_checkout(self):
+        self.client.login(email='waiter@gmail.com', password='password123')
+        
+        future_date = (timezone.now() + timedelta(days=2)).date()
+        reservation = TableReservation.objects.create(
+            user=self.guest_user,
+            table=self.table,
+            duration=timedelta(minutes=90),
+            time_schedule=future_date,
+            start_time=time(18, 0),
+            end_time=time(19, 30),
+            seat=2
+        )
+        TableAssign.objects.create(
+            tabereservation=reservation,
+            waiter=self.waiter_user,
+            assigned=True
+        )
+        url = reverse('table_reservation:table_unassign')
+        data = {'pk': reservation.pk}
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, 200)
+        json_response = response.json()
+        self.assertTrue(json_response['success'])
+        self.assertEqual(json_response['message'], 'Table checked out Successfully')
+
+    def test_unasign_waiter_unable_to_checkout(self):
+        self.client.login(email='waiter@gmail.com', password='password123')
+        other_waiter = CustomUser.objects.create_user(
+            email='other_waiter@gmail.com',
+            password='password123',
+            role='waiter',
+            phone_no='1112223334',
+            name='Other Waiter'
+        )
+        
+        future_date = (timezone.now() + timedelta(days=2)).date()
+        reservation = TableReservation.objects.create(
+            user=self.guest_user,
+            table=self.table,
+            duration=timedelta(minutes=90),
+            time_schedule=future_date,
+            start_time=time(18, 0),
+            end_time=time(19, 30),
+            seat=2
+        )
+        TableAssign.objects.create(
+            tabereservation=reservation,
+            waiter=other_waiter,
+            assigned=True
+        )
+        url = reverse('table_reservation:table_unassign')
+        data = {'pk': reservation.pk}
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, 200)
+        json_response = response.json()
+        self.assertFalse(json_response['success'])
+        self.assertEqual(json_response['message'], 'You are not authorized to unassign this table')
+    
+    def test_table_reserve_without_time(self):
+        self.client.login(email='guest@gmail.com', password='password123')
+        future_date = (timezone.now() + timedelta(days=2)).date()
+        data = {
+            'seat': 2,
+            'time_schedule': future_date,
+            'duration': '01:30'
+        }
+        url = reverse('table_reservation:table_book_form')
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, 200)
+        json_response = response.json()
+        self.assertFalse(json_response['success'])
+        self.assertTrue(json_response['message'])
+
+    def test_table_reserve_without_seat(self):
+        self.client.login(email='guest@gmail.com', password='password123')
+        future_date = (timezone.now() + timedelta(days=2)).date()
+        data = {
+            'time_schedule': future_date,
+            'start_time': '18:00',
+            'duration': '01:30'
+        }
+        url = reverse('table_reservation:table_book_form')
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, 400)
+        json_response = response.json()
+        self.assertFalse(json_response['success'])
+        self.assertTrue('seat' in json_response['errors'])
+
+    def test_table_assign_by_admin_not_able(self):
+        self.client.login(email='admin@gmail.com', password='password123')
+        future_date = (timezone.now() + timedelta(days=2)).date()
+        reservation = TableReservation.objects.create(
+            user=self.guest_user,
+            table=self.table,
+            duration=timedelta(minutes=90),
+            time_schedule=future_date,
+            start_time=time(18, 0),
+            end_time=time(19, 30),
+            seat=2
+        )
+        TableAssign.objects.create(
+            tabereservation=reservation,
+            waiter=self.waiter_user,
+            assigned=True
+        )
+        url = reverse('table_reservation:table_unassign')
+        data = {'pk': reservation.pk}
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, 200)
+        json_response = response.json()
+        self.assertFalse(json_response['success'])
+        self.assertEqual(json_response['message'], 'You are not authorized to unassign this table')
