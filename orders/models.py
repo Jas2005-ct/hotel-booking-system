@@ -36,6 +36,7 @@ class order(models.Model):
     pickup_time = models.TimeField(blank=True,null=True)
     vechile_number = models.CharField(max_length=100)
     status = models.CharField(max_length=100,choices=status_choice,default='progress')
+    created_at = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):
         return f'{self.id} - {self.cart_user.user.id}'
@@ -52,6 +53,9 @@ class order_items(models.Model):
 class order_kitchen_staff(models.Model):
     order = models.OneToOneField(order,on_delete=models.CASCADE)
     kitchen_staff = models.ForeignKey(CustomUser,on_delete=models.CASCADE)
-    
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+
     def __str__(self):
         return f'{self.order.id} - {self.kitchen_staff.name}'
