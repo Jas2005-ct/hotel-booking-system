@@ -36,6 +36,26 @@ class ReservationTest(TestCase):
             available=True
         )
 
+        # Assign Permissions
+        from django.contrib.auth.models import Permission
+        from django.contrib.contenttypes.models import ContentType
+        
+        ct_reservation = ContentType.objects.get_for_model(TableReservation)
+        ct_assign = ContentType.objects.get_for_model(TableAssign)
+
+        # for Guest: add_tablereservation
+        perm_add_res = Permission.objects.get(content_type=ct_reservation, codename='add_tablereservation')
+        self.guest_user.user_permissions.add(perm_add_res)
+
+        # for Waiter: change_tableassign
+        perm_change_assign = Permission.objects.get(content_type=ct_assign, codename='change_tableassign')
+        self.waiter_user.user_permissions.add(perm_change_assign)
+        
+        # for Admin: view_tablereservation and change_tableassign
+        perm_view_res = Permission.objects.get(content_type=ct_reservation, codename='view_tablereservation')
+        self.admin_user.user_permissions.add(perm_view_res)
+        self.admin_user.user_permissions.add(perm_change_assign)
+
     def test_reservation_creation(self):
         self.client.login(email='guest@gmail.com', password='password123')
         url = reverse('table_reservation:table_book_form')

@@ -1,3 +1,5 @@
+from django.contrib.auth.models import Permission
+from django.contrib.contenttypes.models import ContentType
 from table_reservation.tasks import remainder_before_one_hour
 from django.test import TestCase, override_settings
 from accounts.models import CustomUser, TableLayout
@@ -16,6 +18,16 @@ class TableAssignTest(TestCase):
         self.guest_group = Group.objects.create(name='guest')
         self.waiter_group = Group.objects.create(name='waiter')
         self.admin_group = Group.objects.create(name='admin')
+        ct_reservation = ContentType.objects.get_for_model(TableReservation)
+        ct_assign = ContentType.objects.get_for_model(TableAssign)
+        perm_add_res = Permission.objects.get(content_type=ct_reservation, codename='add_tablereservation')
+        self.guest_group.permissions.add(perm_add_res)
+        perm_change_assign = Permission.objects.get(content_type=ct_assign, codename='change_tableassign')
+        perm_view_res = Permission.objects.get(content_type=ct_reservation, codename='view_tablereservation')
+        self.waiter_group.permissions.add(perm_change_assign)
+        self.waiter_group.permissions.add(perm_view_res)
+        perm_view_res = Permission.objects.get(content_type=ct_reservation, codename='view_tablereservation')
+        self.admin_group.permissions.add(perm_view_res)
 
         self.table_layout = TableLayout.objects.create(
             table_no=1, floor_no=1, Location='roof-top', capacity=4, available=True
