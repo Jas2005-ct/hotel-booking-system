@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+{%include 'admin_header.html'%}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">Live Orders</h2>
+            <p class="text-muted mb-0">Monitor orders currently in progress</p>
+        </div>
+        <button onclick="location.reload()" class="btn btn-outline-primary rounded-pill">
+            <i class="bi bi-arrow-clockwise me-2"></i>Refresh
+        </button>
+    </div>
+
+    {% if orders %}
+    <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4">
+        {% for order in orders %}
+        <div class="col">
+            <div class="card h-100 border-0 shadow-sm rounded-4">
+                <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="fw-bold text-primary">#{{ order.id }}</span>
+                        <small class="text-muted ms-2">{{ order.created_at|date:"H:i" }}</small>
+                    </div>
+                    {%if order.status == 'progress'%}
+                    <span class="badge bg-warning bg-opacity-10 text-warning rounded-pill px-3">
+                        InProgress
+                    </span>
+                    {%elif order.status == 'ready'%}
+                    <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3">
+                        Ready
+                    </span>
+                    {%endif%}
+                </div>
+                
+                <div class="card-body">
+                    <!-- Customer Details -->
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-light rounded-circle p-2 me-3">
+                            <i class="bi bi-person text-secondary"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0 fw-bold">{{ order.cart_user.user.name }}</h6>
+                            <small class="text-muted">{{ order.cart_user.user.phone_no }}</small>
+                        </div>
+                    </div>
+
+                    <!-- Order Details -->
+                    <div class="row g-2 mb-3 bg-light rounded-3 p-2 mx-0">
+                        <div class="col-6">
+                            <small class="text-muted d-block">Pickup Time</small>
+                            <span class="fw-medium">{{ order.pickup_time|time:"H:i" }}</span>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted d-block">Vehicle</small>
+                            <span class="fw-medium">{{ order.vechile_number }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Items List -->
+                    <h6 class="text-uppercase text-muted small fw-bold mb-2">Items</h6>
+                    <ul class="list-group list-group-flush mb-3">
+                        {% for item in order.order_items.all %}
+                        <li class="list-group-item px-0 py-1 border-0 d-flex justify-content-between align-items-center">
+                            <span class="text-dark">{{ item.menu.name }}</span>
+                            <span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill">x{{ item.quantity }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+
+                     <!-- Staff Allocations -->
+                    {% if order.kitchen_staff or order.waiter %}
+                    <h6 class="text-uppercase text-muted small fw-bold mb-2 pt-3 border-top">Assigned Staff</h6>
+                    <ul class="list-group list-group-flush mb-0">
+                        {% if order.kitchen_staff %}
+                        <li class="list-group-item px-0 py-1 border-0 d-flex justify-content-between align-items-center">
+                            <span class="text-dark">Kitchen</span>
+                            <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill">{{ order.kitchen_staff.name }}</span>
+                        </li>
+                        {% endif %}
+                        {% if order.waiter %}
+                        <li class="list-group-item px-0 py-1 border-0 d-flex justify-content-between align-items-center">
+                            <span class="text-dark"><i class="bi bi-person-badge me-2 text-primary"></i>Waiter</span>
+                            <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill">{{ order.waiter.name }}</span>
+                        </li>
+                        {% endif %}
+                    </ul>
+                    {% endif %}
+                </div>
+
+                <div class="card-footer bg-white border-0 pt-0 pb-3">
+                    <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded-3">
+                        <span class="text-muted">Total Amount</span>
+                        <span class="fs-5 fw-bold text-primary">₹{{ order.total_amount }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <div class="mb-3">
+            <i class="bi bi-check-circle display-1 text-muted opacity-25"></i>
+        </div>
+        <h3 class="text-muted">No live orders</h3>
+        <p class="text-muted">All orders have been processed or none have been placed.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

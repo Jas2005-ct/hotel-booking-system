@@ -109,23 +109,33 @@ class TableListView(AjaxDatatableView):
     column_defs = [
         {'name':'pk','orderable':True,'searchable':True},
         {'name':'table','orderable':True,'searchable':True},
+        {'name':'user','orderable':True,'searchable':True},
         {'name':'time_schedule','orderable':True,'searchable':True},
         {'name':'start_time','orderable':True,'searchable':True},
         {'name':'status','orderable':False,'searchable':True},
+        {'name':'waiter','orderable':True,'searchable':True}
     ]
     initial_order =[['pk', 'desc']]
     
     def get_initial_queryset(self,request):
         assigned_tables = TableAssign.objects.filter(tabereservation_id=OuterRef('pk'),assigned=True)
         completed_tables = TableAssign.objects.filter(tabereservation_id=OuterRef('pk'),completed=True)
+        waiter_name = TableAssign.objects.filter(tabereservation_id=OuterRef('pk'),assigned=True).values('waiter__name')[:1]
         return TableReservation.objects.annotate(
             assigned=Exists(assigned_tables),
-            completed=Exists(completed_tables)
+            completed=Exists(completed_tables),
+            waiter_name=waiter_name
         )
 
     def render_column(self,row,column):
         if column == 'table':
             return row.table.table_no
+
+        if column == 'waiter':
+            if row.assigned == True:
+                return row.waiter_name
+            else:
+                return 'Not Assigned'
         if column == 'status':
             if row.assigned == True: 
                 if row.completed == True:
@@ -135,3 +145,9 @@ class TableListView(AjaxDatatableView):
             else:
                 return '<span class="badge bg-danger">Not Assigned</span>'
         return super().render_column(row,column)
+
+class LiveOrderView(View):
+    def get(self,request):
+        orders = order.objects.filter(status__in=['progress','ready']).select_related('cart_user__user').prefetch_related('order_items__menu')
+        return render(request,'live_order.html',{'orders':orders})
+        

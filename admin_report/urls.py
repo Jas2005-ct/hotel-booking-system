@@ -10,4 +10,5 @@ urlpatterns = [
     path('order-detail/<int:pk>/', OrderDetailView.as_view(), name='order_detail'),
     path('table-list/',TableList.as_view(),name='table_list'),
     path('table-list-data/',TableListView.as_view(),name='table_list_data'),
+    path('live-order/',LiveOrderView.as_view(),name='live_order')
 ]

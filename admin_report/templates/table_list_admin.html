@@ -10,10 +10,12 @@
                             <thead>
                                 <tr>
                                     <th>ID</th>
+                                    <th>User</th>
                                     <th>Table</th>
                                     <th>Time_Schedule</th>
                                     <th>Start_Time</th>
                                     <th>Status</th>
+                                    <th>Waiter</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -36,10 +38,12 @@
                 lengthMenu: [10, 25, 50, 100],
                 columns:[
                     {data:'pk',name:'pk',orderable:true,searchable:true},
+                    {data:'user',name:'user',orderable:true,searchable:true},
                     {data:'table',name:'table',orderable:true,searchable:true},
                     {data:'time_schedule',name:'time_schedule',orderable:true,searchable:true},
                     {data:'start_time',name:'start_time',orderable:true,searchable:true},
-                    {data:'status',name:'status',orderable:true,searchable:true}
+                    {data:'status',name:'status',orderable:true,searchable:true},
+                    {data:'waiter',name:'waiter',orderable:true,searchable:true}
                 ]
             })
         })

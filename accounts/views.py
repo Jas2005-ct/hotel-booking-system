@@ -31,7 +31,7 @@ class AdminUserView(CreateView):
         group = Group.objects.get(name="admin")
         user.groups.add(group)
         login(self.request,user)
-        return redirect('accounts:management')
+        return redirect('admin_report:admin_home')
         
 
 class WaiterUserView(CreateView):
@@ -79,7 +79,8 @@ class GuestUserView(CreateView):
         send_welcome_email.delay(user.id)
         group = Group.objects.get(name='guest')
         user.groups.add(group)
-        return super().form_valid(form)
+        login(request,user)
+        return redirect('table_reservation:guesthome')
 
 def login_view(request):
     if request.method == 'POST':
@@ -112,6 +113,7 @@ def logout_view(request):
 @login_required
 @user_passes_test(role_required(['admin','waiter']))
 def ManagementView(request):
+    print(request.user.role)
     menus = Menu.objects.all()
     tables = TableLayout.objects.all()
     context = {

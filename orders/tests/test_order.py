@@ -1,5 +1,5 @@
 from django.test import TestCase
-from orders.models import order,order_items,Cart_Items,Cart_User
+from orders.models import order,order_items,Cart_Items,Cart_User,order_kitchen_staff
 from accounts.models import CustomUser,Menu
 from django.urls import reverse
 from django.utils import timezone
@@ -105,4 +105,108 @@ class OrderTest(TestCase):
         self.assertEqual(response.context['orders'][0].vechile_number, 'TN01AB1234')
         self.assertEqual(response.context['orders'][0].status, 'completed')
 
+    def test_order_history_in_kitchen_staff(self):
+        kitchen_user = CustomUser.objects.create_user(
+            email='kitchen_history@example.com', password='testpass', name='Kitchen Staff', phone_no=9876543211, role='kitchen_staff'
+        )
+        self.client.login(email='kitchen_history@example.com', password='testpass')
+        new_order = order.objects.create(
+             cart_user=self.cart_user,
+             total_amount=10.0,
+             vechile_number='TN01AB1234',
+             pickup_time='12:00:00',
+             status='completed'
+        )
+        # Create relation for history
+        order_kitchen_staff.objects.create(order=new_order, kitchen_staff=kitchen_user)
+        
+        response = self.client.get(reverse('orders:kitchen-staff'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'kitchen_staff.html')
+        self.assertEqual(len(response.context['past_orders']), 1)
+        self.assertEqual(response.context['past_orders'][0].order.total_amount, 10.0)
+        self.assertEqual(response.context['past_orders'][0].order.vechile_number, 'TN01AB1234')
+        self.assertEqual(response.context['past_orders'][0].order.status, 'completed')
+
+    def test_unable_to_mark_order_as_ready_already_assigned_to_another_staff(self):
+        kitchen_user = CustomUser.objects.create_user(
+            email='kitchen@example.com', password='testpass', name='Kitchen Staff', phone_no=9876543210, role='kitchen_staff'
+        )
+        self.client.login(email='kitchen@example.com', password='testpass')
+        new_order = order.objects.create(
+             cart_user=self.cart_user,
+             total_amount=10.0,
+             vechile_number='TN01AB1234',
+             pickup_time='12:00:00',
+             status='ready'
+        )
+        order_kitchen_staff.objects.create(order=new_order, kitchen_staff=kitchen_user)
+        response = self.client.post(reverse('orders:kitchen-staff'), {'order_id': new_order.id})
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.json()['success'])
+        self.assertEqual(response.json()['message'], 'Order not found')
+
+    
+    def test_kitchen_page_show_past_order_of_current_user(self):
+        kitchen_user = CustomUser.objects.create_user(
+            email='kitchen@example.com', password='testpass', name='Kitchen Staff', phone_no=9876543210, role='kitchen_staff'
+        )
+        self.client.login(email='kitchen@example.com', password='testpass')
+        new_order = order.objects.create(
+             cart_user=self.cart_user,
+             total_amount=10.0,
+             vechile_number='TN01AB1234',
+             pickup_time='12:00:00',
+             status='ready'
+        )
+        order_kitchen_staff.objects.create(order=new_order, kitchen_staff=kitchen_user)
+        response = self.client.get(reverse('orders:kitchen-staff'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'kitchen_staff.html')
+        self.assertEqual(len(response.context['order_taken']), 1)
+        self.assertEqual(response.context['order_taken'][0].order.total_amount, 10.0)
+        self.assertEqual(response.context['order_taken'][0].order.vechile_number, 'TN01AB1234')
+        self.assertEqual(response.context['order_taken'][0].order.status, 'ready')
+
+    def test_unable_to_place_order_if_no_vechile_number(self):
+        self.client.login(email='testuser@example.com', password='testpass')
+        response = self.client.post(reverse('orders:checkout'), {'pickup_time': '12:00:00'})
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.json()['success'])
+        self.assertEqual(response.json()['message'], 'Invalid form data')
+
+    def test_unable_to_place_order_if_no_pickup_time(self):
+        self.client.login(email='testuser@example.com', password='testpass')
+        response = self.client.post(reverse('orders:checkout'), {'vechile_number': 'TN01AB1234'})
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.json()['success'])
+        self.assertEqual(response.json()['message'], 'Invalid form data')
+    
+    def test_unable_to_place_order_if_no_cart_items(self):
+        self.cart_item.delete()
+        self.client.login(email='testuser@example.com', password='testpass')
+        response = self.client.post(reverse('orders:checkout'), {'vechile_number': 'TN01AB1234', 'pickup_time': '12:00:00'})
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.json()['success'])
+        self.assertEqual(response.json()['message'], 'Cart is empty')
+
+    def test_guest_page_show_its_own_orders(self):
+        new_order = order.objects.create(
+             cart_user=self.cart_user,
+             total_amount=10.0,
+             vechile_number='TN01AB1234',
+             pickup_time='12:00:00',
+             status='completed'
+        )
+        
+        response = self.client.get(reverse('orders:order-list'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'order_list.html')
+        self.assertEqual(len(response.context['orders']), 1)
+        self.assertEqual(response.context['orders'][0].total_amount, 10.0)
+        self.assertEqual(response.context['orders'][0].vechile_number, 'TN01AB1234')
+        self.assertEqual(response.context['orders'][0].status, 'completed')
+
+
+    
     

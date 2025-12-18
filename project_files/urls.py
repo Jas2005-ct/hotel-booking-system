@@ -26,9 +26,9 @@ from django.contrib.auth.decorators import login_required
 def home(request):
     if request.user.is_authenticated:
         if request.user.role == 'admin':
-            return redirect('accounts:management')
+            return redirect('admin_report:admin_home')
         elif request.user.role == 'waiter':
-            return redirect('accounts:waiter')
+            return redirect('accounts:management')
         elif request.user.role == 'guest':
             return redirect('table_reservation:guesthome')
         elif request.user.role == 'kitchen_chef':
@@ -48,3 +48,4 @@ from django.conf.urls.static import static
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+

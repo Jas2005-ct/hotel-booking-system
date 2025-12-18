@@ -14,6 +14,8 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from orders.forms import OrderForm
 from django.db.models import Prefetch
 from orders.tasks import order_confirmation_email
+from django.contrib import messages
+from django.shortcuts import redirect
 # Create your views here.
 
 class CartCreateView(LoginRequiredMixin,UserPassesTestMixin,View):
@@ -125,7 +127,8 @@ class OrderListView(LoginRequiredMixin,View):
             try:
                 cart_user = Cart_User.objects.get(user=user)
             except Cart_User.DoesNotExist:
-                return JsonResponse({'success': False, 'message': 'Cart user not found'})
+                messages.error(request,'Cart user not found')
+                return redirect('table_reservation:guesthome')
             try:
                 orders = order.objects.filter(cart_user=cart_user).prefetch_related('order_items').order_by('-pickup_time')
                 tot = 0
@@ -136,7 +139,7 @@ class OrderListView(LoginRequiredMixin,View):
                 return JsonResponse({'success': False, 'message': str(e)})
         elif user.role == 'waiter':
             try:
-                orders = order.objects.filter(status='ready').prefetch_related('order_items').order_by('-pickup_time')
+                orders = order.objects.filter(status__in=['ready', 'completed']).prefetch_related('order_items').order_by('-pickup_time')
                 tot = 0
                 for i in orders:
                     tot += i.total_amount
@@ -180,7 +183,6 @@ class ServiceStaffView(LoginRequiredMixin,UserPassesTestMixin,View):
         return self.request.user.role == 'waiter'
     def post(self,request):
         id = request.POST.get('id')
-        # print(id)
         orders = order.objects.get(id=id)
         orders.status = 'completed'
         orders.waiter = request.user

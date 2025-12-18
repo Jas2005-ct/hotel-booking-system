@@ -41,7 +41,20 @@
     
     {% block extrajs %}{% endblock %}
     
+    {% if messages %}
+    {% for message in messages %}
     <script>
+         Swal.fire({
+                icon: "{{ message.tags }}",
+                title: "{{ message.tags }}",
+                text: "{{ message }}"
+            });
+        
+    </script>
+    {% endfor %}
+    {% endif %}
+    <script>
+        
     
     $(document).ajaxError(function (event, xhr) {
         if (xhr.status === 403) {

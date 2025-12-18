@@ -30,6 +30,8 @@
                 <div class="card-body">
                     {% if user.role == 'waiter' %}
                     <div class="mb-3">
+                        <span class="fw-bold text-secondary">Chef: {{details.kitchen_staff.name}}</span>
+                        <hr>
                          <h6 class="text-muted text-uppercase small fw-bold mb-2">Pickup Details</h6>
                          <div class="d-flex align-items-center mb-1">
                              <i class="bi bi-clock me-2 text-primary"></i>
@@ -85,18 +87,47 @@
 </div>
 
 <hr>
-<h1>Completed Orders</h1>
-    {%for i in orders%}
-    {%if i.status == 'completed'%}
-    <div class="card">
-        <div class="card-body">
-            <h5 class="card-title">Order #{{ i.id }}</h5>
-            <p class="card-text">Total Amount: {{ i.total_amount }}</p>
-            <p class="card-text">Order Date: {{ i.order_date }}</p>
-        </div>
+<!-- Completed Orders -->
+<div class="container pb-5">
+    <div class="d-flex align-items-center mb-4 mt-4">
+        <h2 class="display-6 fw-bold text-secondary mb-0">Past Orders</h2>
     </div>
-    {%endif%}
-    {% endfor %}
+    
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        {% for details in orders %}
+        {% if details.status == 'completed' %}
+        <div class="col">
+            <div class="card h-100 shadow-sm border-0 rounded-4 overflow-hidden bg-light">
+                <div class="card-header bg-transparent border-bottom py-3 d-flex justify-content-between align-items-center">
+                    <span class="fw-bold text-muted">Order #{{ details.id }}</span>
+                    <span class="badge bg-secondary bg-opacity-25 text-secondary rounded-pill px-3">Completed</span>
+                </div>
+                <div class="card-body">
+                     <div class="mb-3">
+                        <small class="text-muted"><i class="bi bi-calendar-check me-2"></i>{{ details.order_date|date:"M d, Y h:i A" }}</small>
+                    </div>
+
+                    <h6 class="text-muted text-uppercase small fw-bold mb-2">Items Summary</h6>
+                    <ul class="list-group list-group-flush mb-3 rounded-3 bg-transparent">
+                        {% for item in details.order_items.all %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0 border-0 py-1 bg-transparent text-muted">
+                            <span>{{ item.menu.name }}</span>
+                            <span class="badge bg-white text-secondary border rounded-pill">x{{ item.quantity }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+
+                    <div class="mt-auto pt-3 border-top d-flex justify-content-between align-items-center">
+                        <span class="text-muted">Total Paid</span>
+                        <span class="fs-5 fw-bold text-dark">₹{{ details.total_amount }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+</div>
 {% endblock %}
 
 {% block extrajs %}

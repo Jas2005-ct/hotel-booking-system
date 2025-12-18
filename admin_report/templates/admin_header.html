@@ -3,12 +3,15 @@
         <h2 class="fw-bold text-dark mb-1">Admin Dashboard</h2>
         <p class="text-muted">Welcome back, {{ request.user.username|title }}</p>
     </div>
-    <div class="col-auto">
+    <div class="d-flex gap-2">
         <a href="{%url 'admin_report:table_list'%}" class="btn btn-primary rounded-pill px-4 shadow-sm">
             <i class="bi bi-printer me-2"></i>Table List
         </a>
         <a href="{%url 'admin_report:order_list' %}" class="btn btn-primary rounded-pill px-4 shadow-sm">
             <i class="bi bi-file-text me-2"></i>Order List
+        </a>
+        <a href="{%url 'admin_report:live_order'%}" class="btn btn-primary rounded-pill px-4 shadow-sm">
+            <i class="bi bi-printer me-2"></i>Live Orders
         </a>
     </div>
 </div>
