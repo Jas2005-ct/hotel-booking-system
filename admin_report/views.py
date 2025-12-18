@@ -96,6 +96,7 @@ class OrderDetailView(View):
     def get(self,request,pk):
         order_instance = order.objects.select_related('kitchen_staff','waiter').get(pk=pk)
         order_item = order_items.objects.filter(order=pk).select_related('menu')
+        
         return render(request,'order_detail_admin.html',{'order_item':order_item,'order_det':order_instance}) 
 
 class TableList(View):

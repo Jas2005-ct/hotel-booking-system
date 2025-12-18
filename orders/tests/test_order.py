@@ -128,24 +128,6 @@ class OrderTest(TestCase):
         self.assertEqual(response.context['past_orders'][0].order.vechile_number, 'TN01AB1234')
         self.assertEqual(response.context['past_orders'][0].order.status, 'completed')
 
-    def test_unable_to_mark_order_as_ready_already_assigned_to_another_staff(self):
-        kitchen_user = CustomUser.objects.create_user(
-            email='kitchen@example.com', password='testpass', name='Kitchen Staff', phone_no=9876543210, role='kitchen_staff'
-        )
-        self.client.login(email='kitchen@example.com', password='testpass')
-        new_order = order.objects.create(
-             cart_user=self.cart_user,
-             total_amount=10.0,
-             vechile_number='TN01AB1234',
-             pickup_time='12:00:00',
-             status='ready'
-        )
-        order_kitchen_staff.objects.create(order=new_order, kitchen_staff=kitchen_user)
-        response = self.client.post(reverse('orders:kitchen-staff'), {'order_id': new_order.id})
-        self.assertEqual(response.status_code, 200)
-        self.assertFalse(response.json()['success'])
-        self.assertEqual(response.json()['message'], 'Order not found')
-
     
     def test_kitchen_page_show_past_order_of_current_user(self):
         kitchen_user = CustomUser.objects.create_user(

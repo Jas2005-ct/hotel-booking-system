@@ -15,7 +15,7 @@
                 <tr>
                     <th scope="col" style="width: 10%">Image</th>
                     <th scope="col" style="width: 40%">Item</th>
-                    <th scope="col" style="width: 15%">Price</th>
+                    <th scope="col" style="width: 15%" class="text-end">Price</th>
                     <th scope="col" style="width: 15%" class="text-center">Qty</th>
                     <th scope="col" style="width: 20%" class="text-end">Total</th>
                 </tr>
@@ -36,16 +36,16 @@
                         <h6 class="mb-0">{{ item.menu.name }}</h6>
                         <small class="text-muted">{{ item.menu.food_category|title }}</small>
                     </td>
-                    <td>${{ item.menu.price }}</td>
+                    <td class="text-end">₹{{ item.menu.price }}</td>
                     <td class="text-center">{{ item.quantity }}</td>
-                    <td class="text-end fw-bold">${{ item.total_price }}</td>
+                    <td class="text-end">₹{{ item.total_price }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
             <tfoot class="border-top">
                 <tr class="fs-5">
                     <td colspan="4" class="text-end border-0 text-primary"><strong>Grand Total</strong></td>
-                    <td class="text-end border-0 text-primary"><strong>${{ order_item.0.order.total_amount }}</strong></td>
+                    <td class="text-end border-0 text-primary"><strong>₹{{ order_item.0.order.total_amount }}</strong></td>
                 </tr>
             </tfoot>
         </table>

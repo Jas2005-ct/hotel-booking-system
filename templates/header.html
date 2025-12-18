@@ -19,18 +19,19 @@
                     {%else%}
                     <li class="nav-item"><a class="nav-link" href="{% url 'admin_report:admin_home' %}">Home</a></li>
                     {%endif%}
-                    {%if user.role != 'kitchen_staff'%}
+                    {%if user.role == 'waiter' or user.role == 'admin'%}
                     <li class="nav-item"><a class="nav-link" href="{% url 'accounts:management' %}#menu-list">Menu</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'accounts:management' %}#table-list">Table</a></li>
+                    {%endif%}
+                    {%if user.role == 'guest'%}
+                    <li class="nav-item"><a class="nav-link" href="{% url 'table_reservation:guesthome' %}#menu-list">Menu</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'table_reservation:guesthome' %}#reservations-section">Reservation</a></li>
                     {%endif%}
                     {%if user.role == 'admin' or user.role == 'waiter'%}
                     <li class="nav-item"><a class="nav-link" href="{% url 'table_reservation:table_reserved' %}">Reservation</a></li>
                     {%endif%}
                     {%if user.role != 'admin' and user.role != 'kitchen_staff'%}
                     <li class="nav-item"><a class="nav-link" href="{% url 'orders:order-list' %}">orders</a></li>
-                    {%endif%}
-                    {%if user.role != 'admin' and user.role != 'kitchen_staff' and user.role != 'waiter'%}
-                    <li class="nav-item"><a class="nav-link" href="{% url 'orders:service-staff' %}">Service Staff</a></li>
                     {%endif%}
                     {% if not user.is_authenticated %}
                     <li class="nav-item"><a class="nav-link" href="{% url 'accounts:login' %}">Login</a></li>

@@ -47,8 +47,13 @@ class order_items(models.Model):
     menu = models.ForeignKey(Menu,on_delete=models.CASCADE)
     quantity = models.IntegerField(default=1)
     
+    
     def __str__(self):
         return f'{self.order.id} - {self.menu.name} - {self.quantity}'
+
+    @property
+    def total_price(self):
+        return self.menu.price * self.quantity
 
 class order_kitchen_staff(models.Model):
     order = models.OneToOneField(order,on_delete=models.CASCADE)

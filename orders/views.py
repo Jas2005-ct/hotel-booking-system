@@ -16,6 +16,7 @@ from django.db.models import Prefetch
 from orders.tasks import order_confirmation_email
 from django.contrib import messages
 from django.shortcuts import redirect
+from common.mixins import RoleRequiredMixin
 # Create your views here.
 
 class CartCreateView(LoginRequiredMixin,UserPassesTestMixin,View):
@@ -119,7 +120,8 @@ class OrderCreateView(LoginRequiredMixin,UserPassesTestMixin,View):
         form = OrderForm()
         return render(request,'orderform.html',{'form':form})
 
-class OrderListView(LoginRequiredMixin,View): 
+class OrderListView(LoginRequiredMixin,RoleRequiredMixin,View): 
+    required_role = ['guest','waiter']
     def get(self,request):
         user = request.user
         # print(user.id)
