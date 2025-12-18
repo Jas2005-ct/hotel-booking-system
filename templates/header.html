@@ -14,11 +14,13 @@
                     <li class="nav-item"><a class="nav-link" href="{% url 'table_reservation:guesthome' %}">Home</a></li>
                     {%elif user.role == 'kitchen_staff'%}
                     <li class="nav-item"><a class="nav-link" href="{% url 'orders:kitchen-staff' %}">Home</a></li>
+                    {%elif user.role == 'waiter'%}
+                    <li class="nav-item"><a class="nav-link" href="{% url 'accounts:waiter' %}">Home</a></li>
                     {%else%}
-                    <li class="nav-item"><a class="nav-link" href="{% url 'accounts:management' %}">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'admin_report:admin_home' %}">Home</a></li>
                     {%endif%}
-                    <li class="nav-item"><a class="nav-link" href="#menu-list">Menu</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#table-list">Table</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'accounts:management' %}#menu-list">Menu</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'accounts:management' %}#table-list">Table</a></li>
                     {%if user.role == 'admin' or user.role == 'waiter'%}
                     <li class="nav-item"><a class="nav-link" href="{% url 'table_reservation:table_reserved' %}">Reservation</a></li>
                     {%endif%}

@@ -20,7 +20,7 @@ class AdminHomeView(LoginRequiredMixin,View):
         today = datetime.now().date()
         orders_today = all_orders.filter(order_date__date=today)
         order_count = orders_today.count()
-        status_counts_progress = all_orders.aggregate(progress=Count('id', filter=Q(status='progress')))
+        status_counts_progress = all_orders.aggregate(p=Count('id', filter=Q(status='progress')))
         status_counts_ready = all_orders.aggregate(ready=Count('id', filter=Q(status='ready')))
         status_counts_completed = all_orders.aggregate(completed=Count('id', filter=Q(status='completed')))
         table_status_available = TableLayout.objects.filter(available=True).count()
@@ -42,9 +42,9 @@ class AdminHomeView(LoginRequiredMixin,View):
             'total_revenue': total_revenue,
             'total_orders_count': total_orders_count,
             'orders_today_count': order_count,
-            'orders_progress': status_counts_progress,
-            'orders_ready': status_counts_ready,
-            'orders_completed': status_counts_completed,
+            'status_counts_progress': status_counts_progress,
+            'status_counts_ready': status_counts_ready,
+            'status_counts_completed': status_counts_completed,
             'tables_available': table_status_available,
             'tables_assigned': table_status_assigned,
             'tables_completed_today': table_status_completed_today,

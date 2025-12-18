@@ -34,22 +34,7 @@
         font-weight: 500;
     }
 </style>
-
-<!-- Page Header -->
-<div class="d-flex justify-content-between align-items-center mb-5">
-    <div>
-        <h2 class="fw-bold text-dark mb-1">Admin Dashboard</h2>
-        <p class="text-muted">Welcome back, {{ request.user.username|title }}</p>
-    </div>
-    <div class="col-auto">
-        <a href="{%url 'admin_report:table_list'%}" class="btn btn-primary rounded-pill px-4 shadow-sm">
-            <i class="bi bi-printer me-2"></i>Table List
-        </a>
-        <a href="{%url 'admin_report:order_list' %}" class="btn btn-primary rounded-pill px-4 shadow-sm">
-            <i class="bi bi-file-text me-2"></i>Order List
-        </a>
-    </div>
-</div>
+{%include 'admin_header.html'%}
 <div class="row g-4 mb-4">
     <div class="col-md-3">
         <div class="card border-0 shadow-sm rounded-4 h-100 bg-primary text-white">
@@ -124,7 +109,7 @@
                 </div>
                 <div>
                     <h6 class="text-muted small mb-0">In Progress</h6>
-                    <h4 class="fw-bold mb-0">{{ orders_progress }}</h4>
+                    <h4 class="fw-bold mb-0">{{ status_counts_progress.p }}</h4>
                 </div>
             </div>
         </div>
@@ -137,7 +122,7 @@
                 </div>
                 <div>
                     <h6 class="text-muted small mb-0">Ready</h6>
-                    <h4 class="fw-bold mb-0">{{ orders_ready }}</h4>
+                    <h4 class="fw-bold mb-0">{{ status_counts_ready.ready }}</h4>
                 </div>
             </div>
         </div>
@@ -150,7 +135,7 @@
                 </div>
                 <div>
                     <h6 class="text-muted small mb-0">Completed</h6>
-                    <h4 class="fw-bold mb-0">{{ orders_completed }}</h4>
+                    <h4 class="fw-bold mb-0">{{ status_counts_completed.completed }}</h4>
                 </div>
             </div>
         </div>

@@ -90,7 +90,9 @@ def login_view(request):
             user = authenticate(request, email=email, password=password)
             if user is not None:
                 login(request,user)
-                if user.role == 'admin' or user.role=='waiter':
+                if user.role=='admin':
+                    return redirect('admin_report:admin_home')
+                if user.role=='waiter':
                     return redirect('accounts:management')
                 if user.role == 'guest':
                     return redirect('table_reservation:guesthome')
