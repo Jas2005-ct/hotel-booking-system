@@ -25,13 +25,13 @@ class RegisterTest(TestCase):
             'password': 'testpass123',
             'confirm_password': 'testpass123',
             'role': self.role_admin,
-            'phone_no': '0987654321',
+            'phone_no': '9987654321',
             'name': 'newadmin'
         }
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, 302)
         self.assertEqual(CustomUser.objects.count(), 2)
-        self.assertEqual(response.url, reverse('accounts:management'))
+        self.assertEqual(response.url, reverse('admin_report:admin_home'))
 
     def test_guest_register(self):
         url = reverse('accounts:guestuser')
@@ -40,7 +40,7 @@ class RegisterTest(TestCase):
             'password': 'testpass123',
             'confirm_password': 'testpass123',
             'role': self.role_guest,
-            'phone_no': '0987654321',
+            'phone_no': '9987654321',
             'name': 'newguest'
         }
         response = self.client.post(url, data)
@@ -54,7 +54,7 @@ class RegisterTest(TestCase):
             'password': 'testpass123',
             'confirm_password': 'testpass123',
             'role': self.role_waiter,
-            'phone_no': '0987654321',
+            'phone_no': '9987654321',
             'name': 'newwaiter'
         }
         response = self.client.post(url, data)
@@ -69,7 +69,7 @@ class RegisterTest(TestCase):
             'password': 'testpass123',
             'confirm_password': 'testpass123',
             'role': self.role_kitchen,
-            'phone_no': '0987654321',
+            'phone_no': '9987654321',
             'name': 'newkitchen'
         }
         response = self.client.post(url, data)
@@ -98,7 +98,7 @@ class RegisterTest(TestCase):
         }
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, reverse('accounts:management'))
+        self.assertEqual(response.url, reverse('admin_report:admin_home'))
 
     def test_login_invalid(self):
         url = reverse('accounts:login')

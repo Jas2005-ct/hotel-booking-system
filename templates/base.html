@@ -28,6 +28,17 @@
     {% include 'footer.html'  %}
     {% block extrajs %}{% endblock %}
     
+    <script>
+    $(document).ajaxError(function (event, xhr) {
+        if (xhr.status === 403) {
+            Swal.fire({
+                icon: "error",
+                title: "Permission Denied",
+                text: xhr.responseJSON?.message || "You are not allowed to do this"
+            });
+        }
+    });
+    </script>
     {% if messages %}
     {% for message in messages %}
     <script>
@@ -40,18 +51,5 @@
     </script>
     {% endfor %}
     {% endif %}
-    <script>
-        
-    
-    $(document).ajaxError(function (event, xhr) {
-        if (xhr.status === 403) {
-            Swal.fire({
-                icon: "error",
-                title: "Permission Denied",
-                text: xhr.responseJSON?.message || "You are not allowed to do this"
-            });
-        }
-    });
-    </script>
 </body>
 </html>

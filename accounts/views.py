@@ -15,6 +15,7 @@ from django.core.mail import send_mail
 from table_reservation.tasks import send_welcome_email
 from django.contrib.auth.mixins import LoginRequiredMixin,PermissionRequiredMixin
 from common.decorators import role_required
+from common.mixins import RoleRequiredMixin
 
 
 class AdminUserView(CreateView):
@@ -155,9 +156,9 @@ class MenuDelete(LoginRequiredMixin,PermissionRequiredMixin,View):
         try:
             obj = Menu.objects.get(pk=pk)
             obj.delete()
-            return JsonResponse({'status':'success'})
+            return JsonResponse({'status':'True','message':'Menu deleted successfully'})
         except:
-            return JsonResponse({'status':'failed'})
+            return JsonResponse({'status':'False','message':'Menu not deleted'})
 
 class TableCreate(LoginRequiredMixin,PermissionRequiredMixin,CreateView):
     model = TableLayout
@@ -187,14 +188,15 @@ class TableUpdate(LoginRequiredMixin,PermissionRequiredMixin,UpdateView):
         return super().form_valid(form)
 
 
-class TableDelete(View):
+class TableDelete(LoginRequiredMixin,RoleRequiredMixin,View):
+    required_role = ['admin']
     def post(self,request,pk):
         try:
             obj = TableLayout.objects.get(pk=pk)
             obj.delete()
-            return JsonResponse({'status':'success'})
+            return JsonResponse({'status':'True','message':'Table deleted successfully'})
         except:
-            return JsonResponse({'status':'failed'})
+            return JsonResponse({'status':'False','message':'Table not deleted'})
 
 class TableStatus(LoginRequiredMixin,PermissionRequiredMixin,View):
     permission_required = 'accounts.change_tablelayout'

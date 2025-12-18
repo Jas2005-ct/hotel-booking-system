@@ -15,6 +15,7 @@ $(document).ready(function () {
             }
         })
     })
+   
     $('#add-table').click(function () {
         $.ajax({
             url: '/accounts/tablecreate/',
@@ -30,7 +31,7 @@ $(document).ready(function () {
             }
         })
     })
-    
+
     $('.update-menu').click(function () {
         var url = $(this).data('url');
         $.ajax({
@@ -82,67 +83,6 @@ $(document).ready(function () {
             },
             error: function (data) {
                 $('#table_body').html('<div class="text-center"><i class="fa fa-spinner fa-spin"></i></div>');
-            }
-        })
-    })
-    $(document).on('click', '#delete-menu', function () {
-        var pk = $(this).data('pk');
-        Swal.fire({
-            title: 'Are you sure?',
-            text: "The contact will be deleted!",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonText: 'Yes, delete it!',
-            cancelButtonText: 'No'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                $.ajax({
-                    url: `/accounts/menudelete/${pk}/`,
-                    type: 'POST',
-                    data: {
-                        csrfmiddlewaretoken: '{{ csrf_token }}'
-                    },
-                    success: function (data) {
-                        Swal.fire('Deleted!', 'Menu has been deleted.', 'success').then(() => {
-                            location.reload();
-                        })
-                    },
-                    error: function () {
-                        Swal.fire('Error', 'Something went wrong', 'error');
-                    }
-
-                })
-            }
-        })
-    })
-
-    $(document).on('click', '.delete-table', function () {
-        var pk = $(this).data('pk');
-        Swal.fire({
-            title: 'Are you sure?',
-            text: "The table will be deleted!",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonText: 'Yes, delete it!',
-            cancelButtonText: 'No'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                $.ajax({
-                    url: `/accounts/tabledelete/${pk}/`,
-                    type: 'POST',
-                    data: {
-                        csrfmiddlewaretoken: '{{ csrf_token }}'
-                    },
-                    success: function (data) {
-                        Swal.fire('Deleted!', 'Table has been deleted.', 'success').then(() => {
-                            location.reload();
-                        })
-                    },
-                    error: function () {
-                        Swal.fire('Error', 'Something went wrong', 'error');
-                    }
-
-                })
             }
         })
     })

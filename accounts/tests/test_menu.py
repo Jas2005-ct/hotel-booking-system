@@ -1,3 +1,5 @@
+from django.contrib.auth.models import Permission
+from django.contrib.contenttypes.models import ContentType
 from django.test import TestCase
 from django.urls import reverse
 from accounts.models import CustomUser, Menu, TableLayout
@@ -20,6 +22,10 @@ class MenuTest(TestCase):
             food_type='veg'
         )
         self.client.login(email='testuser@gmail.com', password='testpass123')
+        content_type = ContentType.objects.get_for_model(Menu)
+        permissions = Permission.objects.filter(content_type=content_type)
+        self.user.user_permissions.set(permissions)
+        self.user.save()
     
     def test_menu_create(self):
         url = reverse('accounts:menucreate')
@@ -53,5 +59,5 @@ class MenuTest(TestCase):
         url = reverse('accounts:menudelete', args=[self.menu.pk])
         response = self.client.post(url)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()['status'], 'success')
+        self.assertEqual(response.json()['status'], 'True')
         self.assertEqual(Menu.objects.count(), 0)
