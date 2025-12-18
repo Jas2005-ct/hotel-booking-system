@@ -150,10 +150,12 @@ class KitchenStaffView(LoginRequiredMixin,UserPassesTestMixin,View):
         return self.request.user.role == 'kitchen_staff'
     def get(self,request):
         current_time = timezone.localtime().time()
+        now = timezone.now()
         user = request.user
-        orders = order.objects.filter(pickup_time__gte=current_time).prefetch_related(Prefetch('order_items',queryset=order_items.objects.select_related('menu'))).order_by('-pickup_time')
+        orders = order.objects.filter(pickup_time__gte=current_time,created_at__date=now.date()).exclude(status='completed').prefetch_related(Prefetch('order_items',queryset=order_items.objects.select_related('menu'))).prefetch_related('order_kitchen_staff').order_by('-pickup_time')
         order_taken = order_kitchen_staff.objects.filter(kitchen_staff=user).select_related('order').order_by('-order__pickup_time')
-        return render(request,'kitchen_staff.html',{'orders':orders,'order_taken':order_taken})
+        past_orders = order_kitchen_staff.objects.filter(created_at__lt=now,order__status='completed',kitchen_staff=user).select_related('order__cart_user__user').prefetch_related('order__order_items__menu')
+        return render(request,'kitchen_staff.html',{'orders':orders,'order_taken':order_taken,'past_orders':past_orders})
     
     def post(self,request):
         user = request.user
