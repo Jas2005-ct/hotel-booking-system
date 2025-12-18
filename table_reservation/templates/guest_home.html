@@ -8,7 +8,10 @@
 <div class="container py-5">
     <!-- Header / Actions -->
     <div class="d-flex justify-content-between align-items-center mb-5">
-        <h1 class="display-5 fw-bold text-primary">Dashboard of {{user.role|title}} - {{user.name|title}}</h1>
+        <div>
+        <h2 class="fw-bold text-dark mb-1">Guest Dashboard</h2>
+        <p class="text-muted">Welcome back, {{ request.user.name|title }}</p>
+    </div>
         <div class="d-flex gap-2">
             <a href="{% url 'accounts:logout' %}" class="btn btn-secondary">
                 <i class="bi bi-box-arrow-left"></i> Logout
