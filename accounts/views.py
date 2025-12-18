@@ -79,7 +79,7 @@ class GuestUserView(CreateView):
         send_welcome_email.delay(user.id)
         group = Group.objects.get(name='guest')
         user.groups.add(group)
-        login(request,user)
+        login(self.request,user)
         return redirect('table_reservation:guesthome')
 
 def login_view(request):

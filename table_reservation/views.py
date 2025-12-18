@@ -20,7 +20,7 @@ from django.utils import timezone
 from django.contrib.auth.mixins import LoginRequiredMixin,PermissionRequiredMixin
 from django.db.models import Exists, OuterRef,Subquery
 from table_reservation.tasks import table_reservation_guest,remainder_before_one_hour
-
+from common.decorators import role_required
     
 @login_required(login_url='/accounts/login/')
 @user_passes_test(lambda u: u.role == 'guest', login_url='/accounts/login/')
@@ -92,7 +92,7 @@ def TableReserverView(request):
         return render(request,'table_book_form.html',{'form':form})
 
 class TableReservedView(LoginRequiredMixin,PermissionRequiredMixin, View):
-    permission_required = ('table_reservation.change_tablereservation')
+    permission_required = ('table_reservation.view_tablereservation')
     def get(self, request):
         date = timezone.now().date()
         waiter_name = TableAssign.objects.filter(
