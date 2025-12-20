@@ -88,14 +88,14 @@
 
                             {%if request.user.role == 'waiter' and not i.assigned and not i.completed %}
                             <button type="button" class="take-table btn btn-primary mt-2" data-pk="{{i.pk}}">
-                                <i class="bi bi-bag-plus-fill"></i> Take Order
+                                <i class="bi bi-bag-plus-fill"></i> Assign Table
                             </button>
                             {%endif%}
                             
                             {%if request.user.role == 'waiter' and i.assigned and not i.completed %}
                                 {%if i.waiter_id == request.user.id %}
                                     <button type="button" class="table-unassign btn btn-primary mt-2" data-pk="{{i.pk}}">
-                                        <i class="bi bi-bag-plus-fill"></i> Checkout / Unassign
+                                        <i class="bi bi-bag-plus-fill"></i> Checkout / Unassign - Table
                                     </button>
                                 {%endif%}    
                             {% endif %}
