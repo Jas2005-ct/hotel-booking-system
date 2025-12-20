@@ -19,7 +19,7 @@ from datetime import timedelta,datetime
 from django.utils import timezone
 from django.contrib.auth.mixins import LoginRequiredMixin,PermissionRequiredMixin
 from django.db.models import Exists, OuterRef,Subquery
-from table_reservation.tasks import table_reservation_guest,remainder_before_one_hour
+from table_reservation.tasks import table_reservation_guest,reminder_before_one_hour
 from common.decorators import role_required
     
 @login_required(login_url='/accounts/login/')
@@ -51,6 +51,8 @@ def GuestView(request):
         'upcoming_reservations': upcoming_reservations,
         'past_reservations': past_reservations,
     }
+    
+
     return render(request, 'guest_home.html', context)
 
 @login_required(login_url='/accounts/login/')
@@ -65,12 +67,17 @@ def TableReserverView(request):
                     'errors': form.errors
                 },status=400)
             seat = int(form.cleaned_data['seat'])
+            now = timezone.now() 
+            today = now.date()
+            now_one_hour = now + timedelta(minutes=90)
             current_time_schedule = form.cleaned_data['time_schedule']
             current_start_time = form.cleaned_data['start_time']
             start_dt = datetime.combine(current_time_schedule, current_start_time)
+            if timezone.is_naive(start_dt):
+                start_dt = timezone.make_aware(start_dt, timezone.get_current_timezone())
             duration = timedelta(minutes=90)    
             current_end_time = start_dt + duration
-            matched_table = TableLayout.objects.filter(capacity__gte=seat)
+            matched_table = TableLayout.objects.filter(capacity__gte=seat)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
             confict_table = TableReservation.objects.filter(time_schedule=current_time_schedule,start_time__lte=current_end_time,end_time__gte=current_start_time).values_list('table_id',flat=True)
             available_tab = matched_table.exclude(table_no__in=confict_table)
             if not available_tab.exists():
@@ -78,9 +85,9 @@ def TableReserverView(request):
             try:
                 table_no = available_tab.first()
                 created = TableReservation.objects.create(user=request.user,table=table_no,seat=seat,duration=duration,time_schedule=current_time_schedule,start_time=current_start_time,end_time=current_end_time)
-                table_no.available=False
-                table_no.save()
-                print(created)
+                if today == current_time_schedule and now <= start_dt <= now_one_hour :
+                    table_no.available = False
+                    table_no.save()
                 table_reservation_guest.delay(created.id)
                 return JsonResponse({'success':True,'message':'Table Reserved Successfully'})
             except Exception as e:
@@ -98,6 +105,8 @@ class TableReservedView(LoginRequiredMixin,PermissionRequiredMixin, View):
         waiter_name = TableAssign.objects.filter(
             tabereservation=OuterRef('pk')
         ).order_by('-id').values('waiter__name')[:1]
+
+        
 
         waiter_id = TableAssign.objects.filter(tabereservation = OuterRef('pk')).order_by('-id').values('waiter__id')[:1]
         

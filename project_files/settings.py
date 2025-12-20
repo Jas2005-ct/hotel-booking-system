@@ -35,7 +35,6 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
-
 # Application definition
 
 INSTALLED_APPS = [
@@ -56,7 +55,8 @@ INSTALLED_APPS = [
     'redis',
     'django_celery_results',
     'django_celery_beat',
-    'django_redis'
+    'django_redis',
+    'django_extensions'
 ]
 
 CRISPY_TEMPLATE_PACK = 'bootstrap5'

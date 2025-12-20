@@ -27,6 +27,8 @@ def send_welcome_email(user_id):
     return f'Email sent successfully to {user.email}'
 
 
+
+
 @shared_task
 def table_reservation_guest(reservation_id):
     reservation = TableReservation.objects.get(id=reservation_id)
@@ -46,7 +48,7 @@ def table_reservation_guest(reservation_id):
     return f'Remainder sent successfully'
 
 @shared_task
-def remainder_before_one_hour():
+def reminder_before_one_hour():
     now = timezone.localtime()
     one_hour_later = now + timedelta(hours=1)
     waiter_n = TableAssign.objects.filter(tabereservation=OuterRef('pk')).values('waiter__name')[:1]
@@ -75,4 +77,35 @@ def remainder_before_one_hour():
         )
         message.attach_alternative(html_content,"text/html")
         message.send()
-    return "Remainder sent successfully"
+    return "Reminder sent successfully"
+
+
+@shared_task
+def change_table_status():
+    today = timezone.now().date()
+    now_time = timezone.now().time()
+    one_hour_later = timezone.now() + timedelta(minutes=90)
+    one_hour_later_time = one_hour_later.time()
+    if one_hour_later.date() >= today:
+        reservations = TableReservation.objects.filter(
+            time_schedule=today,
+            start_time__gte=now_time
+        ).select_related('table')
+    else:
+        reservations = TableReservation.objects.filter(
+            time_schedule=today,
+            start_time__gte=now_time,
+            start_time__lte=one_hour_later_time
+        ).select_related('table')
+
+    reservations.update(table__available=False)
+    # print(timezone.now())
+    # print(one_hour_later)
+    # for r in reservations:
+    #     print(r.start_time)
+    #     table = r.table
+    #     if table.available == True:
+    #         table.available = False
+    #         table.save()
+
+    return "Table status updated successfully"

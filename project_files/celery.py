@@ -14,10 +14,17 @@ app.conf.update(
 
 app.conf.beat_schedule = {
     'send-reminder-emails': {
-        'task': 'table_reservation.tasks.remainder_before_one_hour',
+        'task': 'table_reservation.tasks.reminder_before_one_hour',
         'schedule': crontab(minute='*'),
     },
+    'table_status_check':{
+        'task': 'table_reservation.tasks.change_table_status',
+        'schedule': crontab(minute='*'),
+    }
 }
+
+
+
 
 app.config_from_object(settings,namespace='CELERY')
 app.autodiscover_tasks()

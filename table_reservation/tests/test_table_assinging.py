@@ -1,6 +1,6 @@
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
-from table_reservation.tasks import remainder_before_one_hour
+from table_reservation.tasks import reminder_before_one_hour
 from django.test import TestCase, override_settings
 from accounts.models import CustomUser, TableLayout
 from table_reservation.models import TableReservation, TableAssign
@@ -73,7 +73,7 @@ class TableAssignTest(TestCase):
         guest_user.groups.add(self.guest_group)
         self.client.login(email='guestflow@gmail.com', password='password123')
 
-        future_time = timezone.localtime() + timedelta(hours=2)
+        future_time = timezone.localtime() + timedelta(minutes=75)
         book_data = {
             'seat': 4,
             'time_schedule': future_time.date(),
@@ -159,10 +159,55 @@ class TableAssignTest(TestCase):
         )
         TableAssign.objects.create(tabereservation=reservation, waiter=self.waiter, assigned=True)
         mail.outbox = []
-        remainder_before_one_hour()
+        reminder_before_one_hour()
         self.assertEqual(len(mail.outbox), 1)
         self.assertIn('Gentle Reminder', mail.outbox[0].subject)
         self.assertEqual(mail.outbox[0].to, ['g3@gmail.com'])
+        
+    def test_change_table_status(self):
+        # Test that change_table_status updates availability for approaching reservations
+        from table_reservation.tasks import change_table_status
+        
+        # 1. Reservation within 90 mins (should block table)
+        data_now_user = CustomUser.objects.create_user(
+            email='now@gmail.com', password='p', role='guest', name='Now', phone_no='555555'
+        )
+        near_future = timezone.now() + timedelta(minutes=30)
+        table1 = TableLayout.objects.create(
+            table_no=10, floor_no=1, Location='indoor', capacity=4, available=True
+        )
+        TableReservation.objects.create(
+            user=data_now_user, 
+            table=table1, 
+            duration=timedelta(minutes=90), 
+            time_schedule=near_future.date(),
+            start_time=near_future.time()
+        )
+        
+        # 2. Reservation > 90 mins (should NOT block table)
+        data_later_user = CustomUser.objects.create_user(
+            email='later@gmail.com', password='p', role='guest', name='Later', phone_no='666666'
+        )
+        far_future = timezone.now() + timedelta(minutes=120)
+        table2 = TableLayout.objects.create(
+            table_no=11, floor_no=1, Location='indoor', capacity=4, available=True
+        )
+        TableReservation.objects.create(
+            user=data_later_user, 
+            table=table2, 
+            duration=timedelta(minutes=90), 
+            time_schedule=far_future.date(),
+            start_time=far_future.time()
+        )
+        
+        change_table_status()
+        
+        table1.refresh_from_db()
+        table2.refresh_from_db()
+        
+        self.assertFalse(table1.available, "Table should be unavailable (reservation within 90 mins)")
+        self.assertTrue(table2.available, "Table should remain available (reservation > 90 mins)")
+
 
     def test_shows_only_assigned_tables_by_user(self):
         guest = CustomUser.objects.create_user(
