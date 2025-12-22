@@ -2,6 +2,25 @@
 {%block content%}
 {%include 'admin_header.html'%}
     <div class="row">
+        <div class="row mb-3">
+            <div class="col-md-3">
+                <select id="statusFilter" class="form-select">
+                    <option value="">All Status</option>
+                    <option value="assigned">Assigned</option>
+                    <option value="completed">Completed</option>
+                    <option value="not_assigned">Not Assigned</option>
+                </select>
+            </div>
+
+            <div class="col-md-3">
+                <input type="date" id="dateFilter" class="form-control">
+            </div>
+            <div class="col-md-3">
+                <button id="resetFilters" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-clockwise"></i> Reset Filters
+                </button>
+            </div>
+        </div>
         <div class="col-12">
             <div class="card">
                 <div class="card-body">
@@ -30,10 +49,13 @@
 {%block extrajs%}
     <script>
         $(document).ready(function(){
-            $('#tableslists').DataTable({
+            var table = $('#tableslists').DataTable({
                 serverSide: true,
                 processing:true,
-                ajax:{url:"/admin_report/table-list-data/",type:"GET"},
+                ajax:{url:"/admin_report/table-list-data/",type:"GET",data: function(data){
+                    data.status = $('#statusFilter').val();
+                    data.date = $('#dateFilter').val();
+                }},
                 pageLength: 10,
                 lengthMenu: [10, 25, 50, 100],
                 columns:[
@@ -42,10 +64,19 @@
                     {data:'table',name:'table',orderable:true,searchable:true},
                     {data:'time_schedule',name:'time_schedule',orderable:true,searchable:true},
                     {data:'start_time',name:'start_time',orderable:true,searchable:true},
-                    {data:'status',name:'status',orderable:true,searchable:true},
-                    {data:'waiter',name:'waiter',orderable:true,searchable:true}
+                    {data:'status',name:'status',orderable:true,searchable:false},
+                    {data:'waiter',name:'waiter',orderable:true,searchable:false}
                 ]
             })
+            $('#statusFilter, #dateFilter').on('change', function () {
+                table.draw();
+            });
+
+            $('#resetFilters').on('click', function() {
+                $('#statusFilter').val('');
+                $('#dateFilter').val('');
+                table.draw();
+            });
         })
     </script>
 {%endblock%}

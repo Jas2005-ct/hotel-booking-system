@@ -4,7 +4,7 @@ from table_reservation.models import *
 from orders.models import order,order_items,Cart_User,Cart_Items,order_kitchen_staff
 from django.views import View
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
-from django.db.models import Sum, Count, F, Q
+from django.db.models import Sum, Count, F, Q, Subquery
 from django.db.models import OuterRef, Exists
 from ajax_datatable.views import AjaxDatatableView
 from datetime import datetime
@@ -32,12 +32,20 @@ class AdminHomeView(LoginRequiredMixin,View):
         top_products = order_items.objects.values('menu__name').annotate(
             total_sold=Sum('quantity'),
             total_revenue=Sum(F('quantity') * F('menu__price'))
-        ).order_by('-total_sold')[:5]
+        ).order_by('-total_sold')[:3]
 
         category_sales = order_items.objects.values('menu__food_category').annotate(
             count=Count('id'),
             revenue=Sum(F('quantity') * F('menu__price'))
         ).order_by('-revenue')
+
+
+        cat_sales = order_items.objects.values('menu__food_type').annotate(
+            count = Count('id')
+        ).order_by('-count')
+
+        total_items_sold = sum(item['count'] for item in cat_sales)
+
         context = {
             'tables': tables_assigned,
             'recent_orders': recent_orders,
@@ -52,6 +60,8 @@ class AdminHomeView(LoginRequiredMixin,View):
             'tables_completed_today': table_status_completed_today,
             'top_products': top_products,
             'category_sales': category_sales,
+            'cat_sales': cat_sales,
+            'total_items_sold': total_items_sold,
         }
         return render(request, 'admin_home.html', context)
 
@@ -63,21 +73,28 @@ class OrderListView(AjaxDatatableView):
     title = 'Order List'
     column_defs = [
         {'name': 'pk','orderable': True,'searchable': True},
-        {'name': 'cart_user__user__name','orderable': True,'searchable': True},
-        {'name': 'order_date','orderable': True,'searchable': True},
-        {'name': 'total_amount','orderable': True,'searchable': True},
+        {'name': 'customer','foreign_field':'cart_user__user__name','orderable': True,'searchable': True},
+        {'name': 'order_date','orderable': True,'searchable': False},
+        {'name': 'total_amount','orderable': True,'searchable': False},
         {'name': 'view','orderable': False,'searchable': False}
     ]
     initial_order =[['order_date', 'desc']]
 
 
     def get_initial_queryset(self,request):
-        return order.objects.all()
+        return order.objects.all().select_related('cart_user__user')
+
+    def filter_queryset(self, params, queryset):
+        queryset = super().filter_queryset(params, queryset)
+        date_filter = self.request.GET.get('date')
+        if date_filter:
+            queryset = queryset.filter(order_date__date=date_filter)
+        return queryset
 
     def render_column(self,row,column):
         if column == 'pk':
             return row.pk
-        if column == 'cart_user__user__name':
+        if column == 'customer':
             return row.cart_user.user.name
         if column == 'order_date':
             return row.order_date.strftime('%Y-%m-%d')
@@ -111,12 +128,12 @@ class TableListView(AjaxDatatableView):
     title = 'Table List'
     column_defs = [
         {'name':'pk','orderable':True,'searchable':True},
-        {'name':'table','orderable':True,'searchable':True},
-        {'name':'user','orderable':True,'searchable':True},
+        {'name':'table','foreign_field':'table__table_no','orderable':True,'searchable':True},
+        {'name':'user','foreign_field':'user__name','orderable':True,'searchable':True},
         {'name':'time_schedule','orderable':True,'searchable':True},
         {'name':'start_time','orderable':True,'searchable':True},
-        {'name':'status','orderable':False,'searchable':True},
-        {'name':'waiter','orderable':True,'searchable':True}
+        {'name':'status','orderable':False,'searchable':False},
+        {'name':'waiter','orderable':True,'searchable':False}
     ]
     initial_order =[['pk', 'desc']]
     
@@ -127,8 +144,22 @@ class TableListView(AjaxDatatableView):
         return TableReservation.objects.annotate(
             assigned=Exists(assigned_tables),
             completed=Exists(completed_tables),
-            waiter_name=waiter_name
+            waiter_name=Subquery(waiter_name)
         )
+
+    def filter_queryset(self,params,queryset):
+        status = self.request.GET.get('status')
+        date = self.request.GET.get('date')
+        if status == 'assigned':
+            queryset= queryset.filter(assigned=True)
+        if status == 'completed':
+            queryset= queryset.filter(completed=True)
+        if status == 'not_assigned':
+            queryset= queryset.filter(assigned=False)
+        if date:
+            queryset= queryset.filter(time_schedule=date)
+        return queryset
+
 
     def render_column(self,row,column):
         if column == 'table':
