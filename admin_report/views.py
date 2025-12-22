@@ -26,6 +26,8 @@ class AdminHomeView(LoginRequiredMixin,View):
         table_status_available = TableLayout.objects.filter(available=True).count()
         table_status_assigned = TableAssign.objects.filter(assigned=True, completed=False).count()
         table_status_completed_today = TableAssign.objects.filter(completed=True).count() 
+        table_reserved_today = TableReservation.objects.filter(created_at__date__lte=today).count()
+        
         recent_orders = all_orders[:5]
         top_products = order_items.objects.values('menu__name').annotate(
             total_sold=Sum('quantity'),

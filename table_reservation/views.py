@@ -174,7 +174,6 @@ class TableUnassignView(LoginRequiredMixin,PermissionRequiredMixin, View):
             table_layout = assignment.tabereservation.table
             table_layout.available = True
             table_layout.save()
-            assignment.assigned = False
             assignment.completed = True
             assignment.save()
             

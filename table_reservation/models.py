@@ -11,6 +11,7 @@ class TableReservation(models.Model):
     start_time = models.TimeField(null=True,blank=True)
     end_time = models.TimeField(null=True,blank=True)
     seat = models.IntegerField(null=True,blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):
         return f"{self.user.name} - {self.table.table_no}"

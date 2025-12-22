@@ -8,5 +8,5 @@ urlpatterns = [
     path('table_reserved/',TableReservedView.as_view(),name='table_reserved'),
     path('table_assign/',TableAssignView.as_view(),name='table_assign'),
     path('table_unassign/',TableUnassignView.as_view(),name='table_unassign'),
-    path('table_delete/',DeleteTableReservation.as_view(),name='table_delete')
+    path('table_delete/',DeleteTableReservation.as_view(),name='table_delete'),
 ]   
