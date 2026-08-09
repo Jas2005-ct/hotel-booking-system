@@ -1,6 +1,8 @@
 from django.contrib.auth.decorators import user_passes_test
 from django.shortcuts import render
+# pyrefly: ignore [missing-import]
 from accounts.models import CustomUser, Menu, TableLayout, RoleChoices
+# pyrefly: ignore [missing-import]
 from accounts.forms import (CustomUserForm, MenuForm, TableLayoutForm, LoginForm)
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -13,9 +15,12 @@ from django.shortcuts import redirect
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.urls import reverse_lazy
 from django.core.mail import send_mail
+# pyrefly: ignore [missing-import]
 from table_reservation.tasks import send_welcome_email
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+# pyrefly: ignore [missing-import]
 from common.decorators import role_required
+# pyrefly: ignore [missing-import]
 from common.mixins import RoleRequiredMixin
 
 
