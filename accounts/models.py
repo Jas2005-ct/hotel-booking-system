@@ -82,7 +82,9 @@ class TableLayout(models.Model):
         ('roof_top','roof_top'),
         ('indoor','indoor'),
         ('outdoor','outdoor'),
-        ('suit_space','suit_space')
+        ('suit_space','suit_space'),
+        ('restaurant','Restaurant Setup'),
+        ('party_setup','Party Setup'),
     )
     table_no = models.AutoField(primary_key=True)
     floor_no = models.IntegerField()
