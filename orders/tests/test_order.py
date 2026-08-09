@@ -34,7 +34,7 @@ class OrderTest(TestCase):
 
     def test_create_order(self):
         data = {
-            'vechile_number': 'TN01AB1234',
+            'vehicle_number': 'TN01AB1234',
             'pickup_time': '12:00:00'
         }
         with patch('orders.tasks.order_confirmation_email.delay') as mock_email:
@@ -43,7 +43,7 @@ class OrderTest(TestCase):
              self.assertTrue(response.json()['success'])
              self.assertTrue(order.objects.filter(cart_user=self.cart_user).exists())
              self.assertEqual(order.objects.get(cart_user=self.cart_user).total_amount, 10.0)
-             self.assertEqual(order.objects.get(cart_user=self.cart_user).vechile_number, 'TN01AB1234')
+             self.assertEqual(order.objects.get(cart_user=self.cart_user).vehicle_number, 'TN01AB1234')
              self.assertEqual(order.objects.get(cart_user=self.cart_user).pickup_time, datetime.strptime('12:00:00', '%H:%M:%S').time())
 
     def test_order_kitchen_staff_view(self):
@@ -55,7 +55,7 @@ class OrderTest(TestCase):
         new_order = order.objects.create(
             cart_user=self.cart_user,
             total_amount=10.0,
-            vechile_number='TN01AB1234',
+            vehicle_number='TN01AB1234',
             pickup_time=(timezone.localtime() + timedelta(hours=1)).time()
         )
         order_items.objects.create(cart_user=self.cart_user, order=new_order, menu=self.menu, quantity=1)
@@ -64,7 +64,7 @@ class OrderTest(TestCase):
         self.assertTemplateUsed(response, 'kitchen_staff.html')
         self.assertEqual(len(response.context['orders']), 1)
         self.assertEqual(response.context['orders'][0].total_amount, 10.0)
-        self.assertEqual(response.context['orders'][0].vechile_number, 'TN01AB1234')
+        self.assertEqual(response.context['orders'][0].vehicle_number, 'TN01AB1234')
         self.assertEqual(response.context['orders'][0].pickup_time, new_order.pickup_time)
 
     def test_order_waiter_complete(self):
@@ -75,7 +75,7 @@ class OrderTest(TestCase):
         new_order = order.objects.create(
              cart_user=self.cart_user,
              total_amount=10.0,
-             vechile_number='TN01AB1234',
+             vehicle_number='TN01AB1234',
              pickup_time='12:00:00',
              status='ready'
         )
@@ -92,7 +92,7 @@ class OrderTest(TestCase):
         new_order = order.objects.create(
              cart_user=self.cart_user,
              total_amount=10.0,
-             vechile_number='TN01AB1234',
+             vehicle_number='TN01AB1234',
              pickup_time='12:00:00',
              status='completed'
         )
@@ -102,7 +102,7 @@ class OrderTest(TestCase):
         self.assertTemplateUsed(response, 'order_list.html')
         self.assertEqual(len(response.context['orders']), 1)
         self.assertEqual(response.context['orders'][0].total_amount, 10.0)
-        self.assertEqual(response.context['orders'][0].vechile_number, 'TN01AB1234')
+        self.assertEqual(response.context['orders'][0].vehicle_number, 'TN01AB1234')
         self.assertEqual(response.context['orders'][0].status, 'completed')
 
     def test_order_history_in_kitchen_staff(self):
@@ -113,7 +113,7 @@ class OrderTest(TestCase):
         new_order = order.objects.create(
              cart_user=self.cart_user,
              total_amount=10.0,
-             vechile_number='TN01AB1234',
+             vehicle_number='TN01AB1234',
              pickup_time='12:00:00',
              status='completed'
         )
@@ -125,7 +125,7 @@ class OrderTest(TestCase):
         self.assertTemplateUsed(response, 'kitchen_staff.html')
         self.assertEqual(len(response.context['past_orders']), 1)
         self.assertEqual(response.context['past_orders'][0].order.total_amount, 10.0)
-        self.assertEqual(response.context['past_orders'][0].order.vechile_number, 'TN01AB1234')
+        self.assertEqual(response.context['past_orders'][0].order.vehicle_number, 'TN01AB1234')
         self.assertEqual(response.context['past_orders'][0].order.status, 'completed')
 
     
@@ -137,7 +137,7 @@ class OrderTest(TestCase):
         new_order = order.objects.create(
              cart_user=self.cart_user,
              total_amount=10.0,
-             vechile_number='TN01AB1234',
+             vehicle_number='TN01AB1234',
              pickup_time='12:00:00',
              status='ready'
         )
@@ -147,10 +147,10 @@ class OrderTest(TestCase):
         self.assertTemplateUsed(response, 'kitchen_staff.html')
         self.assertEqual(len(response.context['order_taken']), 1)
         self.assertEqual(response.context['order_taken'][0].order.total_amount, 10.0)
-        self.assertEqual(response.context['order_taken'][0].order.vechile_number, 'TN01AB1234')
+        self.assertEqual(response.context['order_taken'][0].order.vehicle_number, 'TN01AB1234')
         self.assertEqual(response.context['order_taken'][0].order.status, 'ready')
 
-    def test_unable_to_place_order_if_no_vechile_number(self):
+    def test_unable_to_place_order_if_no_vehicle_number(self):
         self.client.login(email='testuser@example.com', password='testpass')
         response = self.client.post(reverse('orders:checkout'), {'pickup_time': '12:00:00'})
         self.assertEqual(response.status_code, 200)
@@ -159,7 +159,7 @@ class OrderTest(TestCase):
 
     def test_unable_to_place_order_if_no_pickup_time(self):
         self.client.login(email='testuser@example.com', password='testpass')
-        response = self.client.post(reverse('orders:checkout'), {'vechile_number': 'TN01AB1234'})
+        response = self.client.post(reverse('orders:checkout'), {'vehicle_number': 'TN01AB1234'})
         self.assertEqual(response.status_code, 200)
         self.assertFalse(response.json()['success'])
         self.assertEqual(response.json()['message'], 'Invalid form data')
@@ -167,7 +167,7 @@ class OrderTest(TestCase):
     def test_unable_to_place_order_if_no_cart_items(self):
         self.cart_item.delete()
         self.client.login(email='testuser@example.com', password='testpass')
-        response = self.client.post(reverse('orders:checkout'), {'vechile_number': 'TN01AB1234', 'pickup_time': '12:00:00'})
+        response = self.client.post(reverse('orders:checkout'), {'vehicle_number': 'TN01AB1234', 'pickup_time': '12:00:00'})
         self.assertEqual(response.status_code, 200)
         self.assertFalse(response.json()['success'])
         self.assertEqual(response.json()['message'], 'Cart is empty')
@@ -176,7 +176,7 @@ class OrderTest(TestCase):
         new_order = order.objects.create(
              cart_user=self.cart_user,
              total_amount=10.0,
-             vechile_number='TN01AB1234',
+             vehicle_number='TN01AB1234',
              pickup_time='12:00:00',
              status='completed'
         )
@@ -186,7 +186,7 @@ class OrderTest(TestCase):
         self.assertTemplateUsed(response, 'order_list.html')
         self.assertEqual(len(response.context['orders']), 1)
         self.assertEqual(response.context['orders'][0].total_amount, 10.0)
-        self.assertEqual(response.context['orders'][0].vechile_number, 'TN01AB1234')
+        self.assertEqual(response.context['orders'][0].vehicle_number, 'TN01AB1234')
         self.assertEqual(response.context['orders'][0].status, 'completed')
 
 

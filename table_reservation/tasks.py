@@ -86,26 +86,16 @@ def change_table_status():
     now_time = timezone.now().time()
     one_hour_later = timezone.now() + timedelta(minutes=90)
     one_hour_later_time = one_hour_later.time()
-    if one_hour_later.date() >= today:
-        reservations = TableReservation.objects.filter(
-            time_schedule=today,
-            start_time__gte=now_time
-        ).select_related('table')
-    else:
-        reservations = TableReservation.objects.filter(
-            time_schedule=today,
-            start_time__gte=now_time,
-            start_time__lte=one_hour_later_time
-        ).select_related('table')
+    reservations = TableReservation.objects.filter(
+        time_schedule=today,
+        start_time__gte=now_time,
+        start_time__lte=one_hour_later_time
+    ).select_related('table')
 
-    reservations.update(table__available=False)
-    # print(timezone.now())
-    # print(one_hour_later)
-    # for r in reservations:
-    #     print(r.start_time)
-    #     table = r.table
-    #     if table.available == True:
-    #         table.available = False
-    #         table.save()
+    for r in reservations:
+        table = r.table
+        if table.available:
+            table.available = False
+            table.save()
 
     return "Table status updated successfully"

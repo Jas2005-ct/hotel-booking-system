@@ -51,8 +51,8 @@ class TableLayoutForm(ModelForm):
     class Meta:
         model = TableLayout
         fields = ['table_no','floor_no','Location','capacity','available',]
-    def cleaned_capacity(self):
+    def clean_capacity(self):
         capacity = self.cleaned_data.get('capacity')
-        if capacity < 1 and capacity > 15:
+        if capacity < 1 or capacity > 15:
             raise forms.ValidationError("Capacity must be between 1 and 15")
         return capacity

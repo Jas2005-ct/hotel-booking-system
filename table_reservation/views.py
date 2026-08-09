@@ -175,6 +175,7 @@ class TableUnassignView(LoginRequiredMixin,PermissionRequiredMixin, View):
             table_layout.available = True
             table_layout.save()
             assignment.completed = True
+            assignment.assigned = False
             assignment.save()
             
             return JsonResponse({'success': True, 'message': 'Table checked out Successfully'})

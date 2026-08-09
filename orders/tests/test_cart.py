@@ -54,7 +54,7 @@ class CartCreateViewTest(TestCase):
     @patch('orders.views.order_confirmation_email.delay')
     def test_after_checkout_delete_cart_items(self, mock_email):
         data = {
-            'vechile_number': 'TN01AB1234',
+            'vehicle_number': 'TN01AB1234',
             'pickup_time': '12:00:00'
         }
         
@@ -69,7 +69,7 @@ class CartCreateViewTest(TestCase):
     @patch('orders.views.order_confirmation_email.delay')
     def test_cart_items_after_order_creation(self, mock_email):
         data = {
-            'vechile_number': 'TN01AB1234',
+            'vehicle_number': 'TN01AB1234',
             'pickup_time': '12:00:00'
         }
         
@@ -78,7 +78,7 @@ class CartCreateViewTest(TestCase):
         
         created_order = order.objects.get(cart_user=self.cart_user)
         self.assertEqual(created_order.total_amount, 10.0)
-        self.assertEqual(created_order.vechile_number, 'TN01AB1234')
+        self.assertEqual(created_order.vehicle_number, 'TN01AB1234')
         self.assertTrue(order_items.objects.filter(order=created_order, menu=self.menu).exists())
         self.assertEqual(order_items.objects.get(order=created_order, menu=self.menu).quantity, 1)
 

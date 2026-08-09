@@ -29,7 +29,7 @@ class AdminUserView(CreateView):
         user.role = "admin"
         user.set_password(form.cleaned_data.get('password'))
         user = form.save()
-        group = Group.objects.get(name="admin")
+        group, _ = Group.objects.get_or_create(name="admin")
         user.groups.add(group)
         login(self.request,user)
         return redirect('admin_report:admin_home')
@@ -46,7 +46,7 @@ class WaiterUserView(CreateView):
         user.role = "waiter"
         user.set_password(form.cleaned_data.get('password'))
         user = form.save()
-        group = Group.objects.get(name='waiter')
+        group, _ = Group.objects.get_or_create(name='waiter')
         user.groups.add(group)
         login(self.request,user)
         return redirect('accounts:management')
@@ -78,7 +78,7 @@ class GuestUserView(CreateView):
         user.set_password(form.cleaned_data.get('password'))
         user = form.save()
         send_welcome_email.delay(user.id)
-        group = Group.objects.get(name='guest')
+        group, _ = Group.objects.get_or_create(name='guest')
         user.groups.add(group)
         login(self.request,user)
         return redirect('table_reservation:guesthome')

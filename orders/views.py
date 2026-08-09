@@ -90,7 +90,7 @@ class OrderCreateView(LoginRequiredMixin,UserPassesTestMixin,View):
             form = OrderForm(request.POST)
             if not form.is_valid():
                 return JsonResponse({'success': False, 'message': 'Invalid form data'})
-            vechile_number = form.cleaned_data['vechile_number']
+            vehicle_number = form.cleaned_data['vehicle_number']
             pickup_time = form.cleaned_data['pickup_time']
             user = request.user
             cart_user = Cart_User.objects.get(user=user)
@@ -99,7 +99,7 @@ class OrderCreateView(LoginRequiredMixin,UserPassesTestMixin,View):
                 return JsonResponse({'success': False, 'message': 'Cart is empty'})
             total_amount = sum(item.total_price for item in cart_items)
             date = datetime.now()
-            ordered = order.objects.create(cart_user=cart_user,total_amount=total_amount,vechile_number=vechile_number,pickup_time=pickup_time)
+            ordered = order.objects.create(cart_user=cart_user,total_amount=total_amount,vehicle_number=vehicle_number,pickup_time=pickup_time)
             try:
                 for i in cart_items:
                     order_items.objects.create(cart_user=cart_user,order=ordered,menu=i.menu,quantity=i.quantity)

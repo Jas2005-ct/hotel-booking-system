@@ -34,7 +34,7 @@ class order(models.Model):
     total_amount = models.IntegerField()
     order_date = models.DateTimeField(auto_now_add=True)
     pickup_time = models.TimeField(blank=True,null=True)
-    vechile_number = models.CharField(max_length=100)
+    vehicle_number = models.CharField(max_length=100)
     status = models.CharField(max_length=100,choices=status_choice,default='progress')
     created_at = models.DateTimeField(auto_now_add=True)
     

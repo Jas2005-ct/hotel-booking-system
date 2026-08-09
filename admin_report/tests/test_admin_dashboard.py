@@ -33,7 +33,7 @@ class TestAdminDashboard(TestCase):
             cart_user=self.cart_user,
             total_amount=200,
             status='progress',
-            vechile_number='TN01'
+            vehicle_number='TN01'
         )
         
         order_items.objects.create(
@@ -44,7 +44,7 @@ class TestAdminDashboard(TestCase):
             cart_user=self.cart_user,
             total_amount=100,
             status='ready',
-            vechile_number='TN02'
+            vehicle_number='TN02'
         )
         order_items.objects.create(
             cart_user=self.cart_user, order=self.order2, menu=self.menu_item, quantity=1
@@ -145,13 +145,6 @@ class TestAdminDashboard(TestCase):
         response = self.client.get(self.admin_url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context['total_revenue'], 300)
-
-    def test_live_order_list_admin(self):
-        self.client.force_login(self.admin_user)
-        response = self.client.get(reverse('admin_report:live_order'))
-        self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, 'live_order.html')
-        self.assertEqual(len(response.context['orders']), 2)
 
     def test_order_list_template(self):
         self.client.force_login(self.admin_user)

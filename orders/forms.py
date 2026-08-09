@@ -5,5 +5,5 @@ class OrderForm(ModelForm):
     pickup_time = forms.TimeField(widget=forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}), required=True)
     class Meta:
         model = order
-        fields = ['pickup_time','vechile_number']
+        fields = ['pickup_time','vehicle_number']
 
