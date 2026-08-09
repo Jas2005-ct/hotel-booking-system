@@ -19,11 +19,9 @@ from django.urls import path, include
 from django.views.generic import TemplateView
 from django.shortcuts import redirect
 from django.shortcuts import render
-from django.contrib.auth.decorators import login_required
-from accounts.models import RoleChoices
+from accounts.models import Menu, RoleChoices, TableLayout
 
 
-@login_required
 def home(request):
     if request.user.is_authenticated:
         if request.user.role == RoleChoices.ADMIN:
@@ -34,7 +32,9 @@ def home(request):
             return redirect('table_reservation:guesthome')
         elif request.user.role == RoleChoices.KITCHEN_STAFF:
             return redirect('orders:kitchen-staff')
-    return render(request, 'home.html')
+    menus = Menu.objects.all()
+    tables = TableLayout.objects.all()
+    return render(request, 'landing.html', {'menus': menus, 'tables': tables})
 
 urlpatterns = [
     path('',home, name='home'),

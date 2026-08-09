@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Hotel Management{% endblock %}
+{% block content %}
+
+<link rel="stylesheet" href="{% static 'css/acccount_home_style.css' %}">
+
+<style>
+    .hero-section {
+        background: linear-gradient(135deg, #1e293b 0%, #0d6efd 100%);
+        color: #ffffff;
+        border-radius: 24px;
+        overflow: hidden;
+        position: relative;
+    }
+    .hero-section::after {
+        content: "";
+        position: absolute;
+        top: -60%;
+        right: -10%;
+        width: 500px;
+        height: 500px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.06);
+    }
+    .hero-badge {
+        background: rgba(255, 255, 255, 0.15);
+        color: #ffffff;
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        border-radius: 50px;
+        padding: 0.4rem 1rem;
+        font-size: 0.85rem;
+        font-weight: 500;
+        display: inline-block;
+    }
+    .section-title {
+        font-weight: 700;
+        letter-spacing: -0.025em;
+    }
+</style>
+
+<div class="hero-section p-5 mb-5 shadow-lg">
+    <div class="row align-items-center position-relative">
+        <div class="col-lg-7">
+            <span class="hero-badge mb-3"><i class="bi bi-stars me-1"></i>Fine Dining & Table Booking</span>
+            <h1 class="display-4 fw-bold mb-3">Welcome to Hotel Management</h1>
+            <p class="lead opacity-75 mb-4">
+                Browse our curated menu and check table availability before you visit.
+                Login to reserve a table or place your order online.
+            </p>
+            <div class="d-flex flex-wrap gap-3">
+                <a href="{% url 'accounts:login' %}?next={% url 'home' %}" class="btn btn-light btn-lg fw-semibold rounded-pill px-4">
+                    <i class="bi bi-box-arrow-in-right me-2"></i>Login
+                </a>
+                <a href="{% url 'accounts:guestuser' %}" class="btn btn-outline-light btn-lg fw-semibold rounded-pill px-4">
+                    <i class="bi bi-person-plus me-2"></i>Sign Up
+                </a>
+            </div>
+        </div>
+        <div class="col-lg-5 d-none d-lg-block text-center position-relative">
+            <i class="bi bi-building display-1 opacity-25"></i>
+        </div>
+    </div>
+</div>
+
+<div id="menu-list" class="mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-2">
+        <h2 class="section-title mb-0"><i class="bi bi-card-list me-2"></i>Our Menu</h2>
+    </div>
+    {% if menus %}
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        {% for i in menus %}
+        <div class="col">
+            <div class="card h-100 shadow-sm hover-shadow transition-all menu-card border-0">
+                {% if i.images %}
+                <div class="img-wrapper">
+                    <img src="{{ i.images.url }}" class="card-img-top object-fit-cover" alt="{{ i.name }}" style="height: 200px;">
+                </div>
+                {% else %}
+                <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                    <i class="bi bi-image text-muted fs-1"></i>
+                </div>
+                {% endif %}
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h5 class="card-title fw-bold mb-0 text-dark">{{ i.name }}</h5>
+                        <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-2">₹{{ i.price }}</span>
+                    </div>
+                    <p class="card-text text-muted small">{{ i.description|truncatechars:100 }}</p>
+                    <a href="{% url 'accounts:login' %}?next={% url 'home' %}" class="btn btn-outline-primary w-100 rounded-pill">
+                        <i class="bi bi-bag-plus-fill me-1"></i> Login to Order
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-info" role="alert">
+        No menu items found.
+    </div>
+    {% endif %}
+</div>
+
+<div id="table-list" class="mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-2">
+        <h2 class="section-title mb-0"><i class="bi bi-aspect-ratio me-2"></i>Tables</h2>
+    </div>
+    {% if tables %}
+    <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-4">
+        {% for i in tables %}
+        <div class="col">
+            <div class="card h-100 shadow-sm text-center border-0 table-card {% if i.available %}available-card{% else %}unavailable-card{% endif %}">
+                <div class="card-body">
+                    <div class="icon-wrapper mb-3 mx-auto">
+                        <i class="bi bi-table display-6"></i>
+                    </div>
+                    <h5 class="card-title fw-bold">Table #{{ i.table_no }}</h5>
+                    <ul class="list-unstyled text-muted mb-4 small">
+                        <li class="mb-1"><i class="bi bi-layers me-2"></i>Floor: {{ i.floor_no }}</li>
+                        <li><i class="bi bi-people me-2"></i>Capacity: {{ i.capacity }}</li>
+                        <li class="mt-1"><i class="bi bi-pin-map me-2"></i>{{ i.Location|title }}</li>
+                    </ul>
+                    <span class="status-indicator">
+                        {% if i.available %}
+                            <span class="badge bg-success bg-opacity-25 text-success rounded-pill"><i class="bi bi-check-circle me-1"></i>Available</span>
+                        {% else %}
+                            <span class="badge bg-danger bg-opacity-25 text-danger rounded-pill"><i class="bi bi-x-circle me-1"></i>Unavailable</span>
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="card-footer bg-transparent border-0 pb-3">
+                    <a href="{% url 'accounts:login' %}?next={% url 'home' %}" class="btn btn-outline-primary w-100 rounded-pill">
+                        <i class="bi bi-calendar-check me-1"></i> Login to Book
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-info" role="alert">
+        No tables set up yet.
+    </div>
+    {% endif %}
+</div>
+
+<div class="text-center py-5 bg-white rounded-4 border shadow-sm">
+    <h3 class="fw-bold mb-2">Ready to Dine With Us?</h3>
+    <p class="text-muted mb-4">Create a free account to reserve tables and order from the menu.</p>
+    <a href="{% url 'accounts:guestuser' %}" class="btn btn-primary btn-lg rounded-pill px-5 fw-semibold">
+        <i class="bi bi-person-plus me-2"></i>Create Account
+    </a>
+</div>
+
+{% endblock %}
