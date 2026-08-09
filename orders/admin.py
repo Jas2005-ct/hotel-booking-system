@@ -1,10 +1,10 @@
 from django.contrib import admin
 
 # Register your models here.
-from orders.models import *
+from orders.models import Cart_User, Cart_Items, Order, OrderItem, OrderKitchenStaff
 
 admin.site.register(Cart_User)
 admin.site.register(Cart_Items)
-admin.site.register(order)
-admin.site.register(order_items)
-admin.site.register(order_kitchen_staff)
+admin.site.register(Order)
+admin.site.register(OrderItem)
+admin.site.register(OrderKitchenStaff)

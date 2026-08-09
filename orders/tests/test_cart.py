@@ -1,7 +1,7 @@
 from django.test import TestCase
 from django.urls import reverse
 from accounts.models import CustomUser, Menu
-from orders.models import Cart_User, Cart_Items, order, order_items
+from orders.models import Cart_User, Cart_Items, Order, OrderItem
 from unittest.mock import patch
 
 class CartCreateViewTest(TestCase):
@@ -76,11 +76,11 @@ class CartCreateViewTest(TestCase):
         response = self.client.post(reverse('orders:checkout'), data)
         self.assertEqual(response.status_code, 200)
         
-        created_order = order.objects.get(cart_user=self.cart_user)
+        created_order = Order.objects.get(cart_user=self.cart_user)
         self.assertEqual(created_order.total_amount, 10.0)
         self.assertEqual(created_order.vehicle_number, 'TN01AB1234')
-        self.assertTrue(order_items.objects.filter(order=created_order, menu=self.menu).exists())
-        self.assertEqual(order_items.objects.get(order=created_order, menu=self.menu).quantity, 1)
+        self.assertTrue(OrderItem.objects.filter(order=created_order, menu=self.menu).exists())
+        self.assertEqual(OrderItem.objects.get(order=created_order, menu=self.menu).quantity, 1)
 
     def test_cart_increase_decrease(self):
         self.client.post(reverse('orders:update_cart'), {'action': 'increase', 'menu_id': self.menu.id})

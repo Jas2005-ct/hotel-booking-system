@@ -21,7 +21,7 @@ class Cart_Items(models.Model):
     def total_price(self):
         return self.menu.price * self.quantity
 
-class order(models.Model):
+class Order(models.Model):
     status_choice = (
         ('progress','progress'),
         ('ready','ready'),
@@ -29,25 +29,23 @@ class order(models.Model):
         ('cancelled','cancelled')
     )
     cart_user = models.ForeignKey(Cart_User,on_delete=models.CASCADE)
-    kitchen_staff = models.ForeignKey(CustomUser,on_delete=models.CASCADE,related_name='kitchen_staff',null=True,blank=True)
-    waiter = models.ForeignKey(CustomUser,on_delete=models.CASCADE,related_name='waiter',null=True,blank=True)
-    total_amount = models.IntegerField()
-    order_date = models.DateTimeField(auto_now_add=True)
-    pickup_time = models.TimeField(blank=True,null=True)
+    kitchen_staff = models.ForeignKey(CustomUser,on_delete=models.CASCADE,related_name='kitchen_staff_orders',null=True,blank=True)
+    waiter = models.ForeignKey(CustomUser,on_delete=models.CASCADE,related_name='waiter_orders',null=True,blank=True)
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2)
     vehicle_number = models.CharField(max_length=100)
+    pickup_time = models.TimeField(blank=True,null=True)
     status = models.CharField(max_length=100,choices=status_choice,default='progress')
     created_at = models.DateTimeField(auto_now_add=True)
-    
+
     def __str__(self):
         return f'{self.id} - {self.cart_user.user.id}'
-    
-class order_items(models.Model):
+
+class OrderItem(models.Model):
     cart_user = models.ForeignKey(Cart_User,on_delete=models.CASCADE)
-    order = models.ForeignKey(order,on_delete=models.CASCADE,related_name='order_items')
+    order = models.ForeignKey(Order,on_delete=models.CASCADE,related_name='order_items')
     menu = models.ForeignKey(Menu,on_delete=models.CASCADE)
     quantity = models.IntegerField(default=1)
-    
-    
+
     def __str__(self):
         return f'{self.order.id} - {self.menu.name} - {self.quantity}'
 
@@ -55,12 +53,10 @@ class order_items(models.Model):
     def total_price(self):
         return self.menu.price * self.quantity
 
-class order_kitchen_staff(models.Model):
-    order = models.OneToOneField(order,on_delete=models.CASCADE)
+class OrderKitchenStaff(models.Model):
+    order = models.OneToOneField(Order,on_delete=models.CASCADE)
     kitchen_staff = models.ForeignKey(CustomUser,on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
-
-
 
     def __str__(self):
         return f'{self.order.id} - {self.kitchen_staff.name}'

@@ -1,7 +1,7 @@
 from django.test import TestCase, Client
 from django.urls import reverse
 from accounts.models import CustomUser, Menu, TableLayout
-from orders.models import order, order_items, Cart_User
+from orders.models import Order, OrderItem, Cart_User
 from table_reservation.models import TableAssign, TableReservation
 from admin_report.views import AdminHomeView
 from django.utils import timezone
@@ -29,24 +29,24 @@ class TestAdminDashboard(TestCase):
         
         self.cart_user = Cart_User.objects.create(user=self.guest_user)
         
-        self.order1 = order.objects.create(
+        self.order1 = Order.objects.create(
             cart_user=self.cart_user,
             total_amount=200,
             status='progress',
             vehicle_number='TN01'
         )
         
-        order_items.objects.create(
+        OrderItem.objects.create(
             cart_user=self.cart_user, order=self.order1, menu=self.menu_item, quantity=2
         )
         
-        self.order2 = order.objects.create(
+        self.order2 = Order.objects.create(
             cart_user=self.cart_user,
             total_amount=100,
             status='ready',
             vehicle_number='TN02'
         )
-        order_items.objects.create(
+        OrderItem.objects.create(
             cart_user=self.cart_user, order=self.order2, menu=self.menu_item, quantity=1
         )
         

@@ -5,7 +5,7 @@
             <strong>Order ID:</strong> #{{ order_item.0.order.id }}
         </div>
         <div class="col-md-6 text-end">
-            <strong>Date:</strong> {{ order_item.0.order.order_date|date:"F j, Y, g:i a" }}
+            <strong>Date:</strong> {{ order_item.0.order.created_at|date:"F j, Y, g:i a" }}
         </div>
     </div>
     

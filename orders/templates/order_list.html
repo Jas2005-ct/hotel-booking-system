@@ -44,7 +44,7 @@
                     </div>
                     {% else %}
                     <div class="mb-3">
-                        <small class="text-muted"><i class="bi bi-calendar3 me-2"></i>{{ details.order_date|date:"M d, Y" }}</small>
+                        <small class="text-muted"><i class="bi bi-calendar3 me-2"></i>{{ details.created_at|date:"M d, Y" }}</small>
                     </div>
                     {% endif %}
 
@@ -104,7 +104,7 @@
                 </div>
                 <div class="card-body">
                      <div class="mb-3">
-                        <small class="text-muted"><i class="bi bi-calendar-check me-2"></i>{{ details.order_date|date:"M d, Y h:i A" }}</small>
+                        <small class="text-muted"><i class="bi bi-calendar-check me-2"></i>{{ details.created_at|date:"M d, Y h:i A" }}</small>
                     </div>
 
                     <h6 class="text-muted text-uppercase small fw-bold mb-2">Items Summary</h6>

@@ -1,5 +1,5 @@
 from django.test import TestCase
-from orders.models import order,order_items,Cart_Items,Cart_User,order_kitchen_staff
+from orders.models import Order, OrderItem, Cart_Items, Cart_User, OrderKitchenStaff
 from accounts.models import CustomUser,Menu
 from django.urls import reverse
 from django.utils import timezone
@@ -41,10 +41,10 @@ class OrderTest(TestCase):
              response = self.client.post(reverse('orders:checkout'), data)
              self.assertEqual(response.status_code, 200)
              self.assertTrue(response.json()['success'])
-             self.assertTrue(order.objects.filter(cart_user=self.cart_user).exists())
-             self.assertEqual(order.objects.get(cart_user=self.cart_user).total_amount, 10.0)
-             self.assertEqual(order.objects.get(cart_user=self.cart_user).vehicle_number, 'TN01AB1234')
-             self.assertEqual(order.objects.get(cart_user=self.cart_user).pickup_time, datetime.strptime('12:00:00', '%H:%M:%S').time())
+             self.assertTrue(Order.objects.filter(cart_user=self.cart_user).exists())
+             self.assertEqual(Order.objects.get(cart_user=self.cart_user).total_amount, 10.0)
+             self.assertEqual(Order.objects.get(cart_user=self.cart_user).vehicle_number, 'TN01AB1234')
+             self.assertEqual(Order.objects.get(cart_user=self.cart_user).pickup_time, datetime.strptime('12:00:00', '%H:%M:%S').time())
 
     def test_order_kitchen_staff_view(self):
         kitchen_user = CustomUser.objects.create_user(
@@ -52,13 +52,13 @@ class OrderTest(TestCase):
         )
         self.client.login(email='kitchen@example.com', password='testpass')
         current_time = timezone.localtime().time()
-        new_order = order.objects.create(
+        new_order = Order.objects.create(
             cart_user=self.cart_user,
             total_amount=10.0,
             vehicle_number='TN01AB1234',
             pickup_time=(timezone.localtime() + timedelta(hours=1)).time()
         )
-        order_items.objects.create(cart_user=self.cart_user, order=new_order, menu=self.menu, quantity=1)
+        OrderItem.objects.create(cart_user=self.cart_user, order=new_order, menu=self.menu, quantity=1)
         response = self.client.get(reverse('orders:kitchen-staff'))
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'kitchen_staff.html')
@@ -72,7 +72,7 @@ class OrderTest(TestCase):
             email='waiter@example.com', password='testpass', name='Waiter', phone_no=1122334455, role='waiter'
         )
         self.client.login(email='waiter@example.com', password='testpass')
-        new_order = order.objects.create(
+        new_order = Order.objects.create(
              cart_user=self.cart_user,
              total_amount=10.0,
              vehicle_number='TN01AB1234',
@@ -89,7 +89,7 @@ class OrderTest(TestCase):
         self.assertEqual(new_order.waiter, waiter_user)
 
     def test_order_history_in_guest_home(self):
-        new_order = order.objects.create(
+        new_order = Order.objects.create(
              cart_user=self.cart_user,
              total_amount=10.0,
              vehicle_number='TN01AB1234',
@@ -110,7 +110,7 @@ class OrderTest(TestCase):
             email='kitchen_history@example.com', password='testpass', name='Kitchen Staff', phone_no=9876543211, role='kitchen_staff'
         )
         self.client.login(email='kitchen_history@example.com', password='testpass')
-        new_order = order.objects.create(
+        new_order = Order.objects.create(
              cart_user=self.cart_user,
              total_amount=10.0,
              vehicle_number='TN01AB1234',
@@ -118,7 +118,7 @@ class OrderTest(TestCase):
              status='completed'
         )
         # Create relation for history
-        order_kitchen_staff.objects.create(order=new_order, kitchen_staff=kitchen_user)
+        OrderKitchenStaff.objects.create(order=new_order, kitchen_staff=kitchen_user)
         
         response = self.client.get(reverse('orders:kitchen-staff'))
         self.assertEqual(response.status_code, 200)
@@ -134,14 +134,14 @@ class OrderTest(TestCase):
             email='kitchen@example.com', password='testpass', name='Kitchen Staff', phone_no=9876543210, role='kitchen_staff'
         )
         self.client.login(email='kitchen@example.com', password='testpass')
-        new_order = order.objects.create(
+        new_order = Order.objects.create(
              cart_user=self.cart_user,
              total_amount=10.0,
              vehicle_number='TN01AB1234',
              pickup_time='12:00:00',
              status='ready'
         )
-        order_kitchen_staff.objects.create(order=new_order, kitchen_staff=kitchen_user)
+        OrderKitchenStaff.objects.create(order=new_order, kitchen_staff=kitchen_user)
         response = self.client.get(reverse('orders:kitchen-staff'))
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'kitchen_staff.html')
@@ -173,7 +173,7 @@ class OrderTest(TestCase):
         self.assertEqual(response.json()['message'], 'Cart is empty')
 
     def test_guest_page_show_its_own_orders(self):
-        new_order = order.objects.create(
+        new_order = Order.objects.create(
              cart_user=self.cart_user,
              total_amount=10.0,
              vehicle_number='TN01AB1234',

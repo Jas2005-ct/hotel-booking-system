@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.validators import RegexValidator
 
 # Create your models here.
 from django.contrib.auth.models import AbstractUser,BaseUserManager
@@ -32,10 +33,14 @@ class CustomUser(AbstractUser):
         ('waiter','waiter'),
         ('guest','guest'),
     )
+    phone_regex = RegexValidator(
+        regex=r'^\+?[\d\s\-]{7,20}$',
+        message="Phone number must be entered in the format: '+999999999'. Up to 20 digits allowed."
+    )
     username = None
     email = models.EmailField(unique=True)
     name = models.CharField(max_length=100)
-    phone_no = models.IntegerField()
+    phone_no = models.CharField(max_length=20, validators=[phone_regex])
     role = models.CharField(max_length=100,choices=role_choice)
     
     USERNAME_FIELD = 'email'
@@ -61,7 +66,7 @@ class Menu(models.Model):
         ('japanese','japanese'),
     )
     name = models.CharField(max_length=100)
-    price = models.IntegerField()
+    price = models.DecimalField(max_digits=10, decimal_places=2)
     description = models.TextField()
     images = models.ImageField(upload_to='menu_images/',null=True,blank=True,default='images/default.jpg')
     food_type = models.CharField(max_length=100,choices=food_type_choice,null=True,blank=True)

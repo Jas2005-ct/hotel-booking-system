@@ -1,6 +1,7 @@
 from django.db.models.expressions import OuterRef
 from django.shortcuts import render
-from orders.models import *
+from orders.models import Cart_User, Cart_Items, Order, OrderItem, OrderKitchenStaff
+from accounts.models import Menu
 from django.views.generic import ListView, DetailView
 from django.views import View
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
@@ -51,6 +52,7 @@ class CartCreateView(LoginRequiredMixin,UserPassesTestMixin,View):
 
         except Exception as e:
             return JsonResponse({'success': False, 'message': str(e)})
+
 @login_required
 @user_passes_test(lambda u: u.role == 'guest')
 def update_cart(request):
@@ -97,10 +99,10 @@ class OrderCreateView(LoginRequiredMixin,UserPassesTestMixin,View):
                 return JsonResponse({'success': False, 'message': 'Cart is empty'})
             total_amount = sum(item.total_price for item in cart_items)
             date = datetime.now()
-            ordered = order.objects.create(cart_user=cart_user,total_amount=total_amount,vehicle_number=vehicle_number,pickup_time=pickup_time)
+            ordered = Order.objects.create(cart_user=cart_user,total_amount=total_amount,vehicle_number=vehicle_number,pickup_time=pickup_time)
             try:
                 for i in cart_items:
-                    order_items.objects.create(cart_user=cart_user,order=ordered,menu=i.menu,quantity=i.quantity)
+                    OrderItem.objects.create(cart_user=cart_user,order=ordered,menu=i.menu,quantity=i.quantity)
                 cart_items.delete()
                 order_confirmation_email.delay(user.id)
             except Exception as e:
@@ -131,7 +133,7 @@ class OrderListView(LoginRequiredMixin,RoleRequiredMixin,View):
                 messages.error(request,'Cart user not found')
                 return redirect('table_reservation:guesthome')
             try:
-                orders = order.objects.filter(cart_user=cart_user).prefetch_related('order_items').order_by('-pickup_time')
+                orders = Order.objects.filter(cart_user=cart_user).prefetch_related('order_items').order_by('-pickup_time')
                 tot = 0
                 for i in orders:
                     tot += i.total_amount
@@ -140,7 +142,7 @@ class OrderListView(LoginRequiredMixin,RoleRequiredMixin,View):
                 return JsonResponse({'success': False, 'message': str(e)})
         elif user.role == 'waiter':
             try:
-                orders = order.objects.filter(status__in=['ready', 'completed']).prefetch_related('order_items').order_by('-pickup_time')
+                orders = Order.objects.filter(status__in=['ready', 'completed']).prefetch_related('order_items').order_by('-pickup_time')
                 tot = 0
                 for i in orders:
                     tot += i.total_amount
@@ -156,20 +158,20 @@ class KitchenStaffView(LoginRequiredMixin,UserPassesTestMixin,View):
         current_time = timezone.localtime().time()
         now = timezone.now()
         user = request.user
-        orders = order.objects.filter(pickup_time__gte=current_time,created_at__date=now.date()).exclude(status='completed').prefetch_related(Prefetch('order_items',queryset=order_items.objects.select_related('menu'))).prefetch_related('order_kitchen_staff').order_by('-pickup_time')
-        order_taken = order_kitchen_staff.objects.filter(kitchen_staff=user).select_related('order').order_by('-order__pickup_time')
-        past_orders = order_kitchen_staff.objects.filter(created_at__lt=now,order__status='completed',kitchen_staff=user).select_related('order__cart_user__user').prefetch_related('order__order_items__menu')
+        orders = Order.objects.filter(pickup_time__gte=current_time,created_at__date=now.date()).exclude(status='completed').prefetch_related(Prefetch('order_items',queryset=OrderItem.objects.select_related('menu'))).prefetch_related('orderkitchenstaff').order_by('-pickup_time')
+        order_taken = OrderKitchenStaff.objects.filter(kitchen_staff=user).select_related('order').order_by('-order__pickup_time')
+        past_orders = OrderKitchenStaff.objects.filter(created_at__lt=now,order__status='completed',kitchen_staff=user).select_related('order__cart_user__user').prefetch_related('order__order_items__menu')
         return render(request,'kitchen_staff.html',{'orders':orders,'order_taken':order_taken,'past_orders':past_orders})
     
     def post(self,request):
         user = request.user
         order_id = request.POST.get('order_id')
         try:     
-            orders = order.objects.get(id=order_id)
-        except order.DoesNotExist:
+            orders = Order.objects.get(id=order_id)
+        except Order.DoesNotExist:
             return JsonResponse({'success': False, 'message': 'Order not found'})
         try:
-            order_kitchen_staff.objects.create(order=orders,kitchen_staff=user)
+            OrderKitchenStaff.objects.create(order=orders,kitchen_staff=user)
             orders.kitchen_staff = user
             orders.status = 'ready'
             orders.save()
@@ -184,7 +186,7 @@ class ServiceStaffView(LoginRequiredMixin,UserPassesTestMixin,View):
         return self.request.user.role == 'waiter'
     def post(self,request):
         id = request.POST.get('id')
-        orders = order.objects.get(id=id)
+        orders = Order.objects.get(id=id)
         orders.status = 'completed'
         orders.waiter = request.user
         orders.save()

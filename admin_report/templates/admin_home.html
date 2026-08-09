@@ -296,7 +296,7 @@
                                 <td class="fw-medium">{{ order.id }}</td>
                                 <td>{{ order.cart_user.user.name }}</td>
                                 <td class="fw-bold">₹{{ order.total_amount }}</td>
-                                <td class="text-muted small">{{ order.order_date|date:"M d, Y" }}</td>
+                                <td class="text-muted small">{{ order.created_at|date:"M d, Y" }}</td>
                                 <td>
                                     {% if order.status == 'completed' %}
                                         <span class="badge bg-soft-success text-success">Completed</span>

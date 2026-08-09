@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from accounts.models import *
 from table_reservation.models import *
-from orders.models import order,order_items,Cart_User,Cart_Items,order_kitchen_staff
+from orders.models import Order, OrderItem, Cart_User, Cart_Items, OrderKitchenStaff
 from django.views import View
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.db.models import Sum, Count, F, Q, Subquery
@@ -14,11 +14,11 @@ from django.http import HttpResponseBadRequest,HttpResponseForbidden
 class AdminHomeView(LoginRequiredMixin,View):
     def get(self, request):
         tables_assigned = TableAssign.objects.select_related('tabereservation__table', 'waiter').filter(completed=False)
-        all_orders = order.objects.all().order_by('-order_date')
+        all_orders = Order.objects.all().order_by('-created_at')
         total_revenue = all_orders.aggregate(Sum('total_amount'))['total_amount__sum'] or 0
         total_orders_count = all_orders.count()
         today = datetime.now().date()
-        orders_today = all_orders.filter(order_date__date=today)
+        orders_today = all_orders.filter(created_at__date=today)
         order_count = orders_today.count()
         status_counts_progress = all_orders.aggregate(p=Count('id', filter=Q(status='progress')))
         status_counts_ready = all_orders.aggregate(ready=Count('id', filter=Q(status='ready')))
@@ -29,18 +29,18 @@ class AdminHomeView(LoginRequiredMixin,View):
         table_reserved_today = TableReservation.objects.filter(created_at__date__lte=today).count()
         
         recent_orders = all_orders[:5]
-        top_products = order_items.objects.values('menu__name').annotate(
+        top_products = OrderItem.objects.values('menu__name').annotate(
             total_sold=Sum('quantity'),
             total_revenue=Sum(F('quantity') * F('menu__price'))
         ).order_by('-total_sold')[:3]
 
-        category_sales = order_items.objects.values('menu__food_category').annotate(
+        category_sales = OrderItem.objects.values('menu__food_category').annotate(
             count=Count('id'),
             revenue=Sum(F('quantity') * F('menu__price'))
         ).order_by('-revenue')
 
 
-        cat_sales = order_items.objects.values('menu__food_type').annotate(
+        cat_sales = OrderItem.objects.values('menu__food_type').annotate(
             count = Count('id')
         ).order_by('-count')
 
@@ -69,20 +69,20 @@ def order_list(request):
     return render(request, 'order_list_admin.html')
 
 class OrderListView(AjaxDatatableView):
-    model = order
+    model = Order
     title = 'Order List'
     column_defs = [
         {'name': 'pk','orderable': True,'searchable': True},
         {'name': 'customer','foreign_field':'cart_user__user__name','orderable': True,'searchable': True},
-        {'name': 'order_date','orderable': True,'searchable': False},
+        {'name': 'created_at','orderable': True,'searchable': False},
         {'name': 'total_amount','orderable': True,'searchable': False},
         {'name': 'view','orderable': False,'searchable': False}
     ]
-    initial_order =[['order_date', 'desc']]
+    initial_order =[['created_at', 'desc']]
 
 
     def get_initial_queryset(self,request):
-        return order.objects.all().select_related('cart_user__user')
+        return Order.objects.all().select_related('cart_user__user')
 
     def filter_queryset(self, params, queryset):
         queryset = super().filter_queryset(params, queryset)
@@ -96,8 +96,8 @@ class OrderListView(AjaxDatatableView):
             return row.pk
         if column == 'customer':
             return row.cart_user.user.name
-        if column == 'order_date':
-            return row.order_date.strftime('%Y-%m-%d')
+        if column == 'created_at':
+            return row.created_at.strftime('%Y-%m-%d')
         if column == 'view':
             return (
                 '<button type="button" '
@@ -113,8 +113,8 @@ class OrderListView(AjaxDatatableView):
 
 class OrderDetailView(View):
     def get(self,request,pk):
-        order_instance = order.objects.select_related('kitchen_staff','waiter').get(pk=pk)
-        order_item = order_items.objects.filter(order=pk).select_related('menu')
+        order_instance = Order.objects.select_related('kitchen_staff','waiter').get(pk=pk)
+        order_item = OrderItem.objects.filter(order=pk).select_related('menu')
         
         return render(request,'order_detail_admin.html',{'order_item':order_item,'order_det':order_instance}) 
 
@@ -182,6 +182,6 @@ class TableListView(AjaxDatatableView):
 
 class LiveOrderView(View):
     def get(self,request):
-        orders = order.objects.filter(status__in=['progress','ready']).select_related('cart_user__user').prefetch_related('order_items__menu')
+        orders = Order.objects.filter(status__in=['progress','ready']).select_related('cart_user__user').prefetch_related('order_items__menu')
         return render(request,'live_order.html',{'orders':orders})
         
