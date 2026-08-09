@@ -10,6 +10,7 @@ from django.views.generic import CreateView, UpdateView, DeleteView
 from django.contrib.auth.models import Group
 from django.contrib.auth import authenticate, login, logout
 from django.shortcuts import redirect
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.urls import reverse_lazy
 from django.core.mail import send_mail
 from table_reservation.tasks import send_welcome_email
@@ -76,6 +77,9 @@ class GuestUserView(BaseUserRegisterView):
         return redirect('table_reservation:guesthome')
 
 def login_view(request):
+    next_url = request.POST.get('next') or request.GET.get('next')
+    if next_url and not url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+        next_url = None
     if request.method == 'POST':
         form = LoginForm(request.POST)
         if form.is_valid():
@@ -84,6 +88,8 @@ def login_view(request):
             user = authenticate(request, email=email, password=password)
             if user is not None:
                 login(request,user)
+                if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+                    return redirect(next_url)
                 if user.role==RoleChoices.ADMIN:
                     return redirect('admin_report:admin_home')
                 if user.role==RoleChoices.WAITER:
@@ -97,7 +103,7 @@ def login_view(request):
                 messages.error(request, 'Invalid username or password')
     else:
         form = LoginForm()
-    return render(request, 'login.html', {'form': form})
+    return render(request, 'login.html', {'form': form, 'next_url': next_url})
 
 def logout_view(request):
     logout(request)
