@@ -1,86 +1,78 @@
 from django.contrib.auth.decorators import user_passes_test
 from django.shortcuts import render
-from accounts.models import CustomUser,Menu,TableLayout
-from accounts.forms import (CustomUserForm,MenuForm,TableLayoutForm,LoginForm)
+from accounts.models import CustomUser, Menu, TableLayout, RoleChoices
+from accounts.forms import (CustomUserForm, MenuForm, TableLayoutForm, LoginForm)
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.http import HttpResponse,JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.views import View
-from django.views.generic import CreateView,UpdateView,DeleteView
+from django.views.generic import CreateView, UpdateView, DeleteView
 from django.contrib.auth.models import Group
-from django.contrib.auth import authenticate,login,logout
+from django.contrib.auth import authenticate, login, logout
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.core.mail import send_mail
 from table_reservation.tasks import send_welcome_email
-from django.contrib.auth.mixins import LoginRequiredMixin,PermissionRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from common.decorators import role_required
 from common.mixins import RoleRequiredMixin
 
 
-class AdminUserView(CreateView):
+class BaseUserRegisterView(CreateView):
     model = CustomUser
     form_class = CustomUserForm
+    success_url = '/accounts/'
+    user_role = None
+    user_group_name = None
+    success_redirect_url = None
+
+    def form_valid(self, form):
+        user = form.save(commit=False)
+        user.role = self.user_role
+        user.set_password(form.cleaned_data.get('password'))
+        user = form.save()
+        if self.user_group_name:
+            group, _ = Group.objects.get_or_create(name=self.user_group_name)
+            user.groups.add(group)
+        login(self.request, user)
+        return redirect(self.success_redirect_url)
+
+
+class AdminUserView(BaseUserRegisterView):
     template_name = 'adminuserform.html'
-    success_url = '/accounts/'
-    
-    def form_valid(self,form):
-        user = form.save(commit=False)
-        user.role = "admin"
-        user.set_password(form.cleaned_data.get('password'))
-        user = form.save()
-        group, _ = Group.objects.get_or_create(name="admin")
-        user.groups.add(group)
-        login(self.request,user)
-        return redirect('admin_report:admin_home')
-        
+    user_role = RoleChoices.ADMIN
+    user_group_name = 'admin'
+    success_redirect_url = 'admin_report:admin_home'
 
-class WaiterUserView(CreateView):
-    model = CustomUser
-    form_class = CustomUserForm
+
+class WaiterUserView(BaseUserRegisterView):
     template_name = 'waiteruserform.html'
-    success_url = '/accounts/'
-    
-    def form_valid(self,form):
-        user = form.save(commit=False)
-        user.role = "waiter"
-        user.set_password(form.cleaned_data.get('password'))
-        user = form.save()
-        group, _ = Group.objects.get_or_create(name='waiter')
-        user.groups.add(group)
-        login(self.request,user)
-        return redirect('accounts:management')
+    user_role = RoleChoices.WAITER
+    user_group_name = 'waiter'
+    success_redirect_url = 'accounts:management'
 
-class KitchenUserView(CreateView):
-    model = CustomUser
-    form_class = CustomUserForm
+
+class KitchenUserView(BaseUserRegisterView):
     template_name = 'kitchenuserform.html'
-    success_url = '/orders/kitchen-staff/'
-    
-    def form_valid(self,form):
-        user = form.save(commit=False)
-        user.role = "kitchen_staff"
-        user.set_password(form.cleaned_data.get('password'))
-        user = form.save()
-        login(self.request,user)
-        return redirect('orders:kitchen-staff')
+    user_role = RoleChoices.KITCHEN_STAFF
+    success_redirect_url = 'orders:kitchen-staff'
 
 
-class GuestUserView(CreateView):
-    model = CustomUser
-    form_class = CustomUserForm
+class GuestUserView(BaseUserRegisterView):
     template_name = 'guestuserform.html'
-    success_url = '/table_reservation/'
+    user_role = RoleChoices.GUEST
+    user_group_name = 'guest'
+    success_redirect_url = 'table_reservation:guesthome'
 
-    def form_valid(self,form):
+    def form_valid(self, form):
         user = form.save(commit=False)
-        user.role = "guest"
+        user.role = RoleChoices.GUEST
         user.set_password(form.cleaned_data.get('password'))
         user = form.save()
         send_welcome_email.delay(user.id)
         group, _ = Group.objects.get_or_create(name='guest')
         user.groups.add(group)
-        login(self.request,user)
+        login(self.request, user)
         return redirect('table_reservation:guesthome')
 
 def login_view(request):
@@ -92,13 +84,13 @@ def login_view(request):
             user = authenticate(request, email=email, password=password)
             if user is not None:
                 login(request,user)
-                if user.role=='admin':
+                if user.role==RoleChoices.ADMIN:
                     return redirect('admin_report:admin_home')
-                if user.role=='waiter':
+                if user.role==RoleChoices.WAITER:
                     return redirect('accounts:management')
-                if user.role == 'guest':
+                if user.role == RoleChoices.GUEST:
                     return redirect('table_reservation:guesthome')
-                if user.role == 'kitchen_staff':
+                if user.role == RoleChoices.KITCHEN_STAFF:
                     return redirect('orders:kitchen-staff')
                 return JsonResponse({'status': 'False','message':'Unauthorized access'})
             else:
@@ -112,9 +104,8 @@ def logout_view(request):
     return redirect('accounts:login')   
 
 @login_required
-@user_passes_test(role_required(['admin','waiter']))
+@user_passes_test(role_required([RoleChoices.ADMIN, RoleChoices.WAITER]))
 def ManagementView(request):
-    print(request.user.role)
     menus = Menu.objects.all()
     tables = TableLayout.objects.all()
     context = {
@@ -157,7 +148,9 @@ class MenuDelete(LoginRequiredMixin,PermissionRequiredMixin,View):
             obj = Menu.objects.get(pk=pk)
             obj.delete()
             return JsonResponse({'status':'True','message':'Menu deleted successfully'})
-        except:
+        except Menu.DoesNotExist:
+            return JsonResponse({'status':'False','message':'Menu not found'})
+        except Exception:
             return JsonResponse({'status':'False','message':'Menu not deleted'})
 
 class TableCreate(LoginRequiredMixin,PermissionRequiredMixin,CreateView):
@@ -195,7 +188,9 @@ class TableDelete(LoginRequiredMixin,RoleRequiredMixin,View):
             obj = TableLayout.objects.get(pk=pk)
             obj.delete()
             return JsonResponse({'status':'True','message':'Table deleted successfully'})
-        except:
+        except TableLayout.DoesNotExist:
+            return JsonResponse({'status':'False','message':'Table not found'})
+        except Exception:
             return JsonResponse({'status':'False','message':'Table not deleted'})
 
 class TableStatus(LoginRequiredMixin,PermissionRequiredMixin,View):
@@ -210,7 +205,9 @@ class TableStatus(LoginRequiredMixin,PermissionRequiredMixin,View):
                 obj.available = False
             obj.save()
             return JsonResponse({'status':'success'})
-        except:
+        except TableLayout.DoesNotExist:
+            return JsonResponse({'status':'failed','message':'Table not found'})
+        except Exception:
             return JsonResponse({'status':'failed'})
 
     

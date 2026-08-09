@@ -1,29 +1,27 @@
 from django.template.loader import render_to_string
 from django.shortcuts import render
-from accounts.models import CustomUser,TableLayout
+from accounts.models import CustomUser, TableLayout, Menu, RoleChoices
 from table_reservation.forms import TableReservationForm
-from django.contrib.auth.decorators import login_required, user_passes_test,permission_required
+from django.contrib.auth.decorators import login_required, user_passes_test, permission_required
 from django.contrib import messages
-from django.http import HttpResponse,JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.views import View
-from django.views.generic import CreateView,UpdateView,DeleteView
+from django.views.generic import CreateView, UpdateView, DeleteView
 from django.contrib.auth.models import Group
-from django.contrib.auth import authenticate,login,logout
+from django.contrib.auth import authenticate, login, logout
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
-from accounts.models import Menu,TableLayout
-from table_reservation.models import TableReservation,TableAssign
+from table_reservation.models import TableReservation, TableAssign
 import json
-from django.core.exceptions import ValidationError,ObjectDoesNotExist
-from datetime import timedelta,datetime
+from django.core.exceptions import ValidationError, ObjectDoesNotExist
+from datetime import timedelta, datetime
 from django.utils import timezone
-from django.contrib.auth.mixins import LoginRequiredMixin,PermissionRequiredMixin
-from django.db.models import Exists, OuterRef,Subquery
-from table_reservation.tasks import table_reservation_guest,reminder_before_one_hour
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.db.models import Exists, OuterRef, Subquery
+from table_reservation.tasks import table_reservation_guest, reminder_before_one_hour
 from common.decorators import role_required
-    
 @login_required(login_url='/accounts/login/')
-@user_passes_test(lambda u: u.role == 'guest', login_url='/accounts/login/')
+@user_passes_test(lambda u: u.role == RoleChoices.GUEST, login_url='/accounts/login/')
 def GuestView(request):
     menu = Menu.objects.all()
     waiter_name = TableAssign.objects.filter(tabereservation=OuterRef('pk')).order_by('-id').values('waiter__name')[:1]

@@ -15,24 +15,25 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path,include
+from django.urls import path, include
 from django.views.generic import TemplateView
 from django.shortcuts import redirect
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
+from accounts.models import RoleChoices
 
 
 @login_required
 def home(request):
     if request.user.is_authenticated:
-        if request.user.role == 'admin':
+        if request.user.role == RoleChoices.ADMIN:
             return redirect('admin_report:admin_home')
-        elif request.user.role == 'waiter':
+        elif request.user.role == RoleChoices.WAITER:
             return redirect('accounts:management')
-        elif request.user.role == 'guest':
+        elif request.user.role == RoleChoices.GUEST:
             return redirect('table_reservation:guesthome')
-        elif request.user.role == 'kitchen_chef':
-            return redirect('accounts:kitchen-staff')
+        elif request.user.role == RoleChoices.KITCHEN_STAFF:
+            return redirect('orders:kitchen-staff')
     return render(request, 'home.html')
 
 urlpatterns = [

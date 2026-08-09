@@ -2,7 +2,13 @@ from django.db import models
 from django.core.validators import RegexValidator
 
 # Create your models here.
-from django.contrib.auth.models import AbstractUser,BaseUserManager
+from django.contrib.auth.models import AbstractUser, BaseUserManager
+
+class RoleChoices(models.TextChoices):
+    ADMIN = 'admin', 'Admin'
+    KITCHEN_STAFF = 'kitchen_staff', 'Kitchen Staff'
+    WAITER = 'waiter', 'Waiter'
+    GUEST = 'guest', 'Guest'
 
 class CustomManager(BaseUserManager):
     def create_user(self,email,password=None,**extra_fields):
@@ -17,7 +23,7 @@ class CustomManager(BaseUserManager):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
         extra_fields.setdefault('is_active', True)
-        extra_fields.setdefault('role', 'admin')
+        extra_fields.setdefault('role', RoleChoices.ADMIN)
 
         if extra_fields.get('is_staff') is not True:
             raise ValueError("Superuser must have is_staff=True")
@@ -27,12 +33,6 @@ class CustomManager(BaseUserManager):
         return self.create_user(email, password, **extra_fields)
 
 class CustomUser(AbstractUser):
-    role_choice = (
-        ('admin','admin'),
-        ('kitchen_staff','kitchen_staff'),
-        ('waiter','waiter'),
-        ('guest','guest'),
-    )
     phone_regex = RegexValidator(
         regex=r'^\+?[\d\s\-]{7,20}$',
         message="Phone number must be entered in the format: '+999999999'. Up to 20 digits allowed."
@@ -41,7 +41,7 @@ class CustomUser(AbstractUser):
     email = models.EmailField(unique=True)
     name = models.CharField(max_length=100)
     phone_no = models.CharField(max_length=20, validators=[phone_regex])
-    role = models.CharField(max_length=100,choices=role_choice)
+    role = models.CharField(max_length=20, choices=RoleChoices.choices)
     
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['name','phone_no']

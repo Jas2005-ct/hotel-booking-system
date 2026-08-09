@@ -1,7 +1,7 @@
 from django.db.models.expressions import OuterRef
 from django.shortcuts import render
 from orders.models import Cart_User, Cart_Items, Order, OrderItem, OrderKitchenStaff
-from accounts.models import Menu
+from accounts.models import Menu, RoleChoices
 from django.views.generic import ListView, DetailView
 from django.views import View
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
@@ -22,7 +22,7 @@ from common.mixins import RoleRequiredMixin
 
 class CartCreateView(LoginRequiredMixin,UserPassesTestMixin,View):
     def test_func(self):
-        return self.request.user.role == 'guest'
+        return self.request.user.role == RoleChoices.GUEST
     def get(self, request):
         cart_user,created = Cart_User.objects.get_or_create(user=request.user)  
         if created:
@@ -54,7 +54,7 @@ class CartCreateView(LoginRequiredMixin,UserPassesTestMixin,View):
             return JsonResponse({'success': False, 'message': str(e)})
 
 @login_required
-@user_passes_test(lambda u: u.role == 'guest')
+@user_passes_test(lambda u: u.role == RoleChoices.GUEST)
 def update_cart(request):
     if request.method != 'POST':
         return JsonResponse({'success':False,'message':'Invalid request method'})
@@ -84,7 +84,7 @@ def update_cart(request):
 
 class OrderCreateView(LoginRequiredMixin,UserPassesTestMixin,View):
     def test_func(self):
-        return self.request.user.role == 'guest'
+        return self.request.user.role == RoleChoices.GUEST
     def post(self,request):
         try:
             form = OrderForm(request.POST)
@@ -98,7 +98,6 @@ class OrderCreateView(LoginRequiredMixin,UserPassesTestMixin,View):
             if not cart_items:
                 return JsonResponse({'success': False, 'message': 'Cart is empty'})
             total_amount = sum(item.total_price for item in cart_items)
-            date = datetime.now()
             ordered = Order.objects.create(cart_user=cart_user,total_amount=total_amount,vehicle_number=vehicle_number,pickup_time=pickup_time)
             try:
                 for i in cart_items:
@@ -106,15 +105,11 @@ class OrderCreateView(LoginRequiredMixin,UserPassesTestMixin,View):
                 cart_items.delete()
                 order_confirmation_email.delay(user.id)
             except Exception as e:
-                print('here')
                 return JsonResponse({'success': False, 'message': str(e)})
-            # print("order successfullyy placed")
             return JsonResponse({'success': True, 'message': 'Order created successfully'})
         except Cart_Items.DoesNotExist:
-            print('cart here')
             return JsonResponse({'success': False, 'message': 'Cart items not found'})
         except Exception as e:
-            print('no here',e)
             return JsonResponse({'success': False, 'message': str(e)})
 
     def get(self,request):
@@ -122,11 +117,10 @@ class OrderCreateView(LoginRequiredMixin,UserPassesTestMixin,View):
         return render(request,'orderform.html',{'form':form})
 
 class OrderListView(LoginRequiredMixin,RoleRequiredMixin,View): 
-    required_role = ['guest','waiter']
+    required_role = [RoleChoices.GUEST, RoleChoices.WAITER]
     def get(self,request):
         user = request.user
-        # print(user.id)
-        if user.role == 'guest':
+        if user.role == RoleChoices.GUEST:
             try:
                 cart_user = Cart_User.objects.get(user=user)
             except Cart_User.DoesNotExist:
@@ -137,23 +131,21 @@ class OrderListView(LoginRequiredMixin,RoleRequiredMixin,View):
                 tot = 0
                 for i in orders:
                     tot += i.total_amount
-                # print(tot)
             except Exception as e:
                 return JsonResponse({'success': False, 'message': str(e)})
-        elif user.role == 'waiter':
+        elif user.role == RoleChoices.WAITER:
             try:
                 orders = Order.objects.filter(status__in=['ready', 'completed']).prefetch_related('order_items').order_by('-pickup_time')
                 tot = 0
                 for i in orders:
                     tot += i.total_amount
-                # print(tot)
             except Exception as e:
                 return JsonResponse({'success': False, 'message': str(e)})
         return render(request,'order_list.html',{'orders':orders})
 
 class KitchenStaffView(LoginRequiredMixin,UserPassesTestMixin,View):
     def test_func(self):
-        return self.request.user.role == 'kitchen_staff'
+        return self.request.user.role == RoleChoices.KITCHEN_STAFF
     def get(self,request):
         current_time = timezone.localtime().time()
         now = timezone.now()
@@ -175,15 +167,13 @@ class KitchenStaffView(LoginRequiredMixin,UserPassesTestMixin,View):
             orders.kitchen_staff = user
             orders.status = 'ready'
             orders.save()
-            # print(f'order created to kitchen')
         except Exception as e:
-            print(e)
             return JsonResponse({'success': False, 'message': 'Order not found'})
         return JsonResponse({'success': True, 'message': 'Order ready successfully'})
 
 class ServiceStaffView(LoginRequiredMixin,UserPassesTestMixin,View):
     def test_func(self):
-        return self.request.user.role == 'waiter'
+        return self.request.user.role == RoleChoices.WAITER
     def post(self,request):
         id = request.POST.get('id')
         orders = Order.objects.get(id=id)
