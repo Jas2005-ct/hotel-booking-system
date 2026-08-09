@@ -3,3 +3,8 @@ __pycache__/
 db.sqlite3
 .env
 venv/
+*.rdb
+dump.rdb
+menu_images/
+query
+staticfiles/

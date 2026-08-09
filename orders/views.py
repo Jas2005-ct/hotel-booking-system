@@ -7,7 +7,6 @@ from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
 from django.http import HttpResponse
 from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
 from datetime import datetime
 from django.utils import timezone
 from django.contrib.auth.mixins import LoginRequiredMixin,UserPassesTestMixin,PermissionRequiredMixin
@@ -52,7 +51,6 @@ class CartCreateView(LoginRequiredMixin,UserPassesTestMixin,View):
 
         except Exception as e:
             return JsonResponse({'success': False, 'message': str(e)})
-@csrf_exempt
 @login_required
 @user_passes_test(lambda u: u.role == 'guest')
 def update_cart(request):
