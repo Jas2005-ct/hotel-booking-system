@@ -1,4 +1,5 @@
 from django.db.models.expressions import OuterRef
+from django.db import transaction
 from django.shortcuts import render
 from orders.models import Cart_User, Cart_Items, Order, OrderItem, OrderKitchenStaff
 from accounts.models import Menu, RoleChoices
@@ -35,21 +36,20 @@ class CartCreateView(LoginRequiredMixin,UserPassesTestMixin,View):
 
     def post(self,request):
         try:
-            user = request.user
-            menu_id = request.POST.get('menu_id')
-            menu = Menu.objects.get(id=menu_id)
-            cart_user,created = Cart_User.objects.get_or_create(user=user)  
-            if created:
-                cart_user.save()
-            if Cart_Items.objects.filter(cart_user=cart_user,menu=menu).exists():
-                cart_items = Cart_Items.objects.get(cart_user=cart_user,menu=menu)
-                cart_items.quantity += 1
-                cart_items.save()
-                return JsonResponse({'success': True, 'message': 'Item added to cart successfully'}) 
-            cart_items = Cart_Items.objects.create(cart_user=cart_user,menu=menu,quantity=1)
-            cart_items.save()
-            return JsonResponse({'success': True, 'message': 'Item added to cart successfully'})
-
+            with transaction.atomic():
+                user = request.user
+                menu_id = request.POST.get('menu_id')
+                menu = Menu.objects.get(id=menu_id)
+                cart_user,created = Cart_User.objects.get_or_create(user=user)  
+                if created:
+                    cart_user.save()
+                cart_item, created = Cart_Items.objects.get_or_create(cart_user=cart_user, menu=menu, defaults={'quantity': 1})
+                if not created:
+                    cart_item = Cart_Items.objects.select_for_update().get(cart_user=cart_user, menu=menu)
+                    cart_item.quantity += 1
+                    cart_item.save()
+                    return JsonResponse({'success': True, 'message': 'Item added to cart successfully'}) 
+                return JsonResponse({'success': True, 'message': 'Item added to cart successfully'})
         except Exception as e:
             return JsonResponse({'success': False, 'message': str(e)})
 
@@ -65,21 +65,23 @@ def update_cart(request):
     if not menu_id:
         return JsonResponse({'success':False,'message':'Menu id is required'})
     try:
-        menu = Menu.objects.get(id=menu_id)
-        cart_user = Cart_User.objects.get(user=user)
+        with transaction.atomic():
+            menu = Menu.objects.get(id=menu_id)
+            cart_user = Cart_User.objects.get(user=user)
+            cart_item = Cart_Items.objects.select_for_update().get(cart_user=cart_user,menu=menu)
+            if action == 'increase':
+                cart_item.quantity += 1
+                cart_item.save()
+            if action == 'decrease':
+                cart_item.quantity -= 1
+                cart_item.save()
+            if cart_item.quantity == 0:
+                cart_item.delete()
+            return JsonResponse({'success': True, 'message': 'Cart updated successfully'})  
+    except Cart_Items.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Cart item not found'})
     except Exception as e:
-        return JsonResponse({'success':False,'message':str(e)})
-
-    cart_items = Cart_Items.objects.get(cart_user=cart_user,menu=menu)
-    if action == 'increase':
-        cart_items.quantity += 1
-        cart_items.save()
-    if action == 'decrease':
-        cart_items.quantity -= 1
-        cart_items.save()
-    if cart_items.quantity == 0:
-        cart_items.delete()
-    return JsonResponse({'success': True, 'message': 'Cart updated successfully'})  
+        return JsonResponse({'success': False, 'message': str(e)})
 
 
 class OrderCreateView(LoginRequiredMixin,UserPassesTestMixin,View):
@@ -87,26 +89,24 @@ class OrderCreateView(LoginRequiredMixin,UserPassesTestMixin,View):
         return self.request.user.role == RoleChoices.GUEST
     def post(self,request):
         try:
-            form = OrderForm(request.POST)
-            if not form.is_valid():
-                return JsonResponse({'success': False, 'message': 'Invalid form data'})
-            vehicle_number = form.cleaned_data['vehicle_number']
-            pickup_time = form.cleaned_data['pickup_time']
-            user = request.user
-            cart_user = Cart_User.objects.get(user=user)
-            cart_items = Cart_Items.objects.filter(cart_user=cart_user)
-            if not cart_items:
-                return JsonResponse({'success': False, 'message': 'Cart is empty'})
-            total_amount = sum(item.total_price for item in cart_items)
-            ordered = Order.objects.create(cart_user=cart_user,total_amount=total_amount,vehicle_number=vehicle_number,pickup_time=pickup_time)
-            try:
+            with transaction.atomic():
+                form = OrderForm(request.POST)
+                if not form.is_valid():
+                    return JsonResponse({'success': False, 'message': 'Invalid form data'})
+                vehicle_number = form.cleaned_data['vehicle_number']
+                pickup_time = form.cleaned_data['pickup_time']
+                user = request.user
+                cart_user = Cart_User.objects.get(user=user)
+                cart_items = Cart_Items.objects.filter(cart_user=cart_user)
+                if not cart_items:
+                    return JsonResponse({'success': False, 'message': 'Cart is empty'})
+                total_amount = sum(item.total_price for item in cart_items)
+                ordered = Order.objects.create(cart_user=cart_user, total_amount=total_amount, vehicle_number=vehicle_number, pickup_time=pickup_time)
                 for i in cart_items:
-                    OrderItem.objects.create(cart_user=cart_user,order=ordered,menu=i.menu,quantity=i.quantity)
+                    OrderItem.objects.create(cart_user=cart_user, order=ordered, menu=i.menu, quantity=i.quantity)
                 cart_items.delete()
                 order_confirmation_email.delay(user.id)
-            except Exception as e:
-                return JsonResponse({'success': False, 'message': str(e)})
-            return JsonResponse({'success': True, 'message': 'Order created successfully'})
+                return JsonResponse({'success': True, 'message': 'Order created successfully'})
         except Cart_Items.DoesNotExist:
             return JsonResponse({'success': False, 'message': 'Cart items not found'})
         except Exception as e:
@@ -176,8 +176,14 @@ class ServiceStaffView(LoginRequiredMixin,UserPassesTestMixin,View):
         return self.request.user.role == RoleChoices.WAITER
     def post(self,request):
         id = request.POST.get('id')
-        orders = Order.objects.get(id=id)
-        orders.status = 'completed'
-        orders.waiter = request.user
-        orders.save()
-        return JsonResponse({'success': True, 'message': 'Order completed successfully'})
+        try:
+            with transaction.atomic():
+                orders = Order.objects.select_for_update().get(id=id)
+                orders.status = 'completed'
+                orders.waiter = request.user
+                orders.save()
+                return JsonResponse({'success': True, 'message': 'Order completed successfully'})
+        except Order.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'Order not found'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': str(e)})
