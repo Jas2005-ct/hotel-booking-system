@@ -134,10 +134,10 @@ class MenuCreate(LoginRequiredMixin,PermissionRequiredMixin,CreateView):
     permission_required = 'accounts.add_menu'
 
     def form_valid(self, form):
-        self.object = form.save()
+        response = super().form_valid(form)
         if self.request.headers.get('x-requested-with') == 'XMLHttpRequest':
             return JsonResponse({'status': 'success'})
-        return super().form_valid(form)
+        return response
 
 class MenuUpdate(LoginRequiredMixin,PermissionRequiredMixin,UpdateView):
     model = Menu
@@ -147,10 +147,10 @@ class MenuUpdate(LoginRequiredMixin,PermissionRequiredMixin,UpdateView):
     permission_required = 'accounts.change_menu'
 
     def form_valid(self, form):
-        self.object = form.save()
+        response = super().form_valid(form)
         if self.request.headers.get('x-requested-with') == 'XMLHttpRequest':
             return JsonResponse({'status': 'success'})
-        return super().form_valid(form)
+        return response
 
 class MenuDelete(LoginRequiredMixin,PermissionRequiredMixin,View):
     permission_required = 'accounts.delete_menu'
