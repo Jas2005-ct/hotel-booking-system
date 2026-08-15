@@ -56,7 +56,8 @@ INSTALLED_APPS = [
     'django_celery_results',
     'django_celery_beat',
     'django_redis',
-    'django_extensions'
+    'django_extensions',
+    'storages',
 ]
 
 CRISPY_TEMPLATE_PACK = 'bootstrap5'
@@ -101,12 +102,17 @@ WSGI_APPLICATION = 'project_files.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+if env.str('DATABASE_URL', default=''):
+    DATABASES = {
+        'default': env.db('DATABASE_URL')
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # Password validation
@@ -151,8 +157,54 @@ STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Media files (Images)
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+# ---------------------------------------------------------------------------
+# Media file storage.
+# When the R2_* env vars are set, uploaded media (e.g. menu images) are stored
+# in a Cloudflare R2 bucket and only the URL reference is kept in the DB.
+# Otherwise we fall back to the local filesystem.
+#
+# Django 6.0 uses the STORAGES dict (DEFAULT_FILE_STORAGE is deprecated), so we
+# pick the "default" backend (used by every ImageField/FileField) based on
+# whether R2 is configured. The S3/boto3 stack is only initialized when R2 is.
+# ---------------------------------------------------------------------------
+
+_r2_bucket = env("R2_BUCKET_NAME", default="")
+if _r2_bucket:
+    # S3 (R2) compatible storage.
+    AWS_ACCESS_KEY_ID = env("R2_ACCESS_KEY_ID")
+    AWS_SECRET_ACCESS_KEY = env("R2_SECRET_ACCESS_KEY")
+    AWS_STORAGE_BUCKET_NAME = _r2_bucket
+    AWS_S3_REGION_NAME = "auto"
+    AWS_S3_ENDPOINT_URL = (
+        f"https://{env('R2_ACCOUNT_ID')}.r2.cloudflarestorage.com"
+    )
+    AWS_S3_SIGNATURE_VERSION = "s3v4"
+    AWS_S3_FILE_OVERWRITE = False
+    AWS_DEFAULT_ACL = None
+    AWS_QUERYSTRING_AUTH = False
+    # Custom domain / public URL for serving media (optional).
+    # S3Boto3Storage.url() prepends url_protocol, so custom_domain must be
+    # just the hostname — strip any scheme prefix.
+    _public_url = env("R2_PUBLIC_URL", default="")
+    if _public_url:
+        from urllib.parse import urlparse
+        _parsed = urlparse(_public_url)
+        AWS_S3_CUSTOM_DOMAIN = _parsed.hostname or _public_url.rstrip("/")
+    _media_backend = "project_files.storages.R2MediaStorage"
+else:
+    _media_backend = "django.core.files.storage.FileSystemStorage"
+
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
+
+STORAGES = {
+    "default": {
+        "BACKEND": _media_backend,
+    },
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
+}
 
 
 #CELERY 
