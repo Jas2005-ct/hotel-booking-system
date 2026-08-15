@@ -183,9 +183,13 @@ if _r2_bucket:
     AWS_DEFAULT_ACL = None
     AWS_QUERYSTRING_AUTH = False
     # Custom domain / public URL for serving media (optional).
+    # S3Boto3Storage.url() prepends url_protocol, so custom_domain must be
+    # just the hostname — strip any scheme prefix.
     _public_url = env("R2_PUBLIC_URL", default="")
     if _public_url:
-        AWS_S3_CUSTOM_DOMAIN = _public_url.rstrip("/")
+        from urllib.parse import urlparse
+        _parsed = urlparse(_public_url)
+        AWS_S3_CUSTOM_DOMAIN = _parsed.hostname or _public_url.rstrip("/")
     _media_backend = "project_files.storages.R2MediaStorage"
 else:
     _media_backend = "django.core.files.storage.FileSystemStorage"
