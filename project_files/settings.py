@@ -104,7 +104,14 @@ WSGI_APPLICATION = 'project_files.wsgi.application'
 
 if env.str('DATABASE_URL', default=''):
     DATABASES = {
-        'default': env.db('DATABASE_URL')
+        'default': {
+            **env.db('DATABASE_URL'),
+            'CONN_MAX_AGE': 60,
+            'OPTIONS': {
+                'connect_timeout': 20,
+                'sslmode': 'require',
+            },
+        }
     }
 else:
     DATABASES = {

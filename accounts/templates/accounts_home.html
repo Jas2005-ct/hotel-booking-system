@@ -33,7 +33,7 @@
                 <div class="card h-100 shadow-sm hover-shadow transition-all menu-card border-0">
                     {% if i.images %}
                     <div class="img-wrapper">
-                        <img src="{{ i.images.url}}" class="card-img-top object-fit-cover" alt="{{ i.name }}" style="height: 200px;">
+                        <img src="{{ i.images.url}}" class="card-img-top object-fit-cover" alt="{{ i.name }}" loading="lazy" decoding="async" width="300" height="200" style="height: 200px; width: 100%;">
                     </div>
                     {% else %}
                     <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
