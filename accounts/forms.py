@@ -1,5 +1,6 @@
 from django.forms import ModelForm
-from accounts.models import CustomUser,Menu,TableLayout
+# pyrefly: ignore [missing-import]
+from accounts.models import CustomUser,Menu,TableLayout 
 from django.contrib.auth.models import Group
 from django import forms
 
